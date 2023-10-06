@@ -1,0 +1,5 @@
+(sym_lib_table
+  (version 7)
+  (lib (name "LSM6DS3TR-C")(type "KiCad")(uri "${KIPRJMOD}/libraries/LSM6DS3TR-C.kicad_sym")(options "")(descr ""))
+  (lib (name "USBLC6-2P")(type "KiCad")(uri "${KIPRJMOD}/libraries/USBLC6-2P6.kicad_sym")(options "")(descr ""))
+)
