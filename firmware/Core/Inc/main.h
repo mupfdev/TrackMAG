@@ -57,14 +57,12 @@ void Error_Handler(void);
 /* USER CODE END EFP */
 
 /* Private defines -----------------------------------------------------------*/
-#define CALIBRATE_Pin GPIO_PIN_1
+#define CALIBRATE_Pin GPIO_PIN_5
 #define CALIBRATE_GPIO_Port GPIOA
-#define INT1_Pin GPIO_PIN_6
-#define INT1_GPIO_Port GPIOA
-#define DO_NOT_USE_Pin GPIO_PIN_7
-#define DO_NOT_USE_GPIO_Port GPIOA
-#define DRDY_Pin GPIO_PIN_8
+#define DRDY_Pin GPIO_PIN_13
 #define DRDY_GPIO_Port GPIOB
+#define INT1_Pin GPIO_PIN_14
+#define INT1_GPIO_Port GPIOB
 
 /* USER CODE BEGIN Private defines */
 
