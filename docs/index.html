@@ -14,13 +14,22 @@
     <title>mupf.dev</title>
     <link rel="stylesheet" href="/style.min.css">
     <link rel="stylesheet" href="/mupf.css">
+    <link rel="stylesheet" href="/magnify.css">
+    <link rel="stylesheet" href="/x3dom.css">
+
     <link rel="apple-touch-icon" sizes="180x180" href="/apple-touch-icon.png?v=2">
     <link rel="icon" type="image/png" sizes="32x32" href="/favicon-32x32.png?v=2">
     <link rel="icon" type="image/png" sizes="16x16" href="/favicon-16x16.png?v=2">
     <link rel="manifest" href="/site.webmanifest?v=2">
 
-    <script src="https://www.x3dom.org/download/x3dom.js"></script>
-    <link rel="stylesheet" href="https://www.x3dom.org/download/x3dom.css">
+    <script src="/jquery-3.7.1.min.js"></script>
+    <script src="/jquery.magnify.js"></script>
+
+    <script>
+      $(document).ready(function() {
+      $('.zoom').magnify();
+      });
+    </script>
   </head>
 
   <body>
@@ -53,6 +62,12 @@
       device when connected to the Xbox Adaptive Controller from
       Microsoft.  This is to be fully supported.
     </p>
+
+    <div class="gallery">
+      <a href="TrackMAG_v1_3D.png">
+        <img src="TrackMAG_v1_3D.png" class="zoom gallery-1x1" alt="TrackMAG v1 3D rendering">
+      </a>
+    </div>
 
     <h3>Status</h3>
 
@@ -130,13 +145,13 @@
 
     <X3D height="20em">
       <Scene>
-        <Viewpoint id="Iso" centerOfRotation="0 0 5.7" position="39.5141 -39.5141 45.2141" orientation="0.742906 0.307722 0.594473 1.21712" description="camera" fieldOfView="0.9"></Viewpoint>
-        <Viewpoint id="Front" centerOfRotation="0 0 5.7" position="0 -68.4404 5.7" orientation="1 0 0 1.5708" description="camera" fieldOfView="0.9"></Viewpoint>
-        <Viewpoint id="Back" centerOfRotation="0 0 5.7" position="0 68.4404 5.7" orientation="0 0.707107 0.707107 3.14159" description="camera" fieldOfView="0.9"></Viewpoint>
-        <Viewpoint id="Right" centerOfRotation="0 0 5.7" position="68.4404 0 5.7" orientation="0.57735 0.57735 0.57735 2.0944" description="camera" fieldOfView="0.9"></Viewpoint>
-        <Viewpoint id="Left" centerOfRotation="0 0 5.7" position="-68.4404 0 5.7" orientation="-0.57735 0.57735 0.57735 4.18879" description="camera" fieldOfView="0.9"></Viewpoint>
-        <Viewpoint id="Top" centerOfRotation="0 0 5.7" position="0 0 74.1404" orientation="0 0 1 0" description="camera" fieldOfView="0.9"></Viewpoint>
-        <Viewpoint id="Bottom" centerOfRotation="0 0 5.7" position="0 0 -62.7404" orientation="1 0 0 3.14159" description="camera" fieldOfView="0.9"></Viewpoint>
+          <Viewpoint id="Iso" centerOfRotation="0 0 4.5" position="40.2554 -40.2554 44.7554" orientation="0.742906 0.307722 0.594473 1.21712" description="camera" fieldOfView="0.9"></Viewpoint>
+          <Viewpoint id="Front" centerOfRotation="0 0 4.5" position="0 -69.7244 4.5" orientation="1 0 0 1.5708" description="camera" fieldOfView="0.9"></Viewpoint>
+          <Viewpoint id="Back" centerOfRotation="0 0 4.5" position="0 69.7244 4.5" orientation="0 0.707107 0.707107 3.14159" description="camera" fieldOfView="0.9"></Viewpoint>
+          <Viewpoint id="Right" centerOfRotation="0 0 4.5" position="69.7244 0 4.5" orientation="0.57735 0.57735 0.57735 2.0944" description="camera" fieldOfView="0.9"></Viewpoint>
+          <Viewpoint id="Left" centerOfRotation="0 0 4.5" position="-69.7244 0 4.5" orientation="-0.57735 0.57735 0.57735 4.18879" description="camera" fieldOfView="0.9"></Viewpoint>
+          <Viewpoint id="Top" centerOfRotation="0 0 4.5" position="0 0 74.2244" orientation="0 0 1 0" description="camera" fieldOfView="0.9"></Viewpoint>
+          <Viewpoint id="Bottom" centerOfRotation="0 0 4.5" position="0 0 -65.2244" orientation="1 0 0 3.14159" description="camera" fieldOfView="0.9"></Viewpoint>
 
         <Transform>
           <inline url="TrackMAG_v1.x3d"></inline>
