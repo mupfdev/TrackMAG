@@ -16,11 +16,16 @@
     <link rel="stylesheet" href="/mupf.css">
     <link rel="stylesheet" href="/magnify.css">
     <link rel="stylesheet" href="/x3dom.css">
+    <link rel="stylesheet" href="dfu.css">
 
     <link rel="apple-touch-icon" sizes="180x180" href="/apple-touch-icon.png?v=2">
     <link rel="icon" type="image/png" sizes="32x32" href="/favicon-32x32.png?v=2">
     <link rel="icon" type="image/png" sizes="16x16" href="/favicon-16x16.png?v=2">
     <link rel="manifest" href="/site.webmanifest?v=2">
+
+    <script src="dfu.js"></script>
+    <script src="dfuse.js"></script>
+    <script src="dfu-util.js"></script>
 
     <script src="/jquery-3.7.1.min.js"></script>
     <script src="/jquery.magnify.js"></script>
@@ -98,8 +103,7 @@
     </p>
 
     <p>
-      Details can be found in the <a
-                                    href="https://github.com/mupfdev/TrackMAG/blob/main/pdf/Schematic.pdf">schematic</a>.
+      Details can be found in the <a href="https://github.com/mupfdev/TrackMAG/blob/main/pdf/Schematic.pdf">schematic</a>.
     </p>
 
     <div class="free-standing">
@@ -160,6 +164,70 @@
         </Transform>
       </Scene>
     </X3D>
+
+    <h3>Firmware Update</h3>
+
+    <p>
+      <span id="status"></span>
+    </p>
+
+    <p>
+      <label for="vid">Vendor ID (hex):</label>
+      <input list="vendor_ids" type="text" name="vid" id="vid" maxlength="6" size="8" pattern="0x[A-Fa-f0-9]{1,4}">
+      <datalist id="vendor_ids">
+        <option value="0x0483">TrackMAG</option>
+      </datalist>
+    </p>
+
+    <p>
+      <button id="connect">Connect</button>
+      <button id="detach" disabled="disabled">Detach DFU</button>
+    </p>
+
+    <dialog id="interfaceDialog">
+      Your device has multiple DFU interfaces. Select one from the list below:
+      <form id="interfaceForm" method="dialog">
+        <button id="selectInterface" type="submit">Select interface</button>
+      </form>
+    </dialog>
+
+    <div class="free-standing">
+      <div id="usbInfo" style="white-space: pre"></div>
+      <div id="dfuInfo" style="white-space: pre"></div>
+    </div>
+
+    <fieldset>
+      <legend>Upload Firmware</legend>
+
+      <form id="configForm">
+        <label for="transferSize">Transfer Size:</label>
+        <input type="number" name="transferSize" id="transferSize" value="1024">
+
+        <div id="dfuseFields" hidden="hidden">
+          <label for="dfuseStartAddress">DfuSe Start Address:</label>
+          <input type="text" name="dfuseStartAddress" id="dfuseStartAddress" title="Initial memory address to read/write from (hex)" size="10" pattern="0x[A-Fa-f0-9]+">
+          <label for="dfuseUploadSize">DfuSe Upload Size:</label>
+          <input type="number" name="dfuseUploadSize" id="dfuseUploadSize" min="1">
+        </div>
+
+        <p>
+          <input type="file" id="firmwareFile" name="file" disabled="disabled">
+        </p>
+
+        <p>
+          <button id="download" disabled="disabled">Download</button>
+        </p>
+
+        <div class="log" id="downloadLog"></div>
+      </form>
+    </fieldset>
+
+    <p>
+      <a href="https://github.com/devanlai/webdfu">webdfu</a> by Devan
+      Lai is licensed under the "The ISC License".  See the
+      file <a href="https://github.com/devanlai/webdfu/blob/gh-pages/LICENSE">LICENSE</a>
+      for details.
+    </p>
 
     <h3>You want to help?</h3>
 
