@@ -321,13 +321,6 @@ int force_dfu_gpio() {
 #define WORD_RDP           0
 #define WORD_WRP0          4
 
-#define RCC_CFGR_HPRE_SYSCLK_NODIV      0x0
-#define RCC_CFGR_PPRE1_HCLK_DIV2        0x4
-#define RCC_CFGR_PPRE2_HCLK_NODIV       0x0
-#define RCC_CFGR_ADCPRE_PCLK2_DIV8      0x3
-#define RCC_CFGR_PLLMUL_PLL_CLK_MUL9    0x7
-#define RCC_CFGR_PLLSRC_HSE_CLK         0x1
-#define RCC_CFGR_PLLXTPRE_HSE_CLK       0x0
 #define RCC_CFGR_SW_SYSCLKSEL_PLLCLK    0x2
 #define RCC_CFGR_SW_SHIFT                 0
 #define RCC_CFGR_SW (3 << RCC_CFGR_SW_SHIFT)
@@ -359,7 +352,7 @@ static inline int reset_due_to_pin() {
 static void clock_setup_in_hse_8mhz_out_72mhz() {
 	// No need to use HSI or HSE while setting up the PLL, just use the RC osc.
 
-	/* Enable external high-speed oscillator 8MHz. */
+	/* Enable external high-speed oscillator 16MHz. */
 	RCC_CR |= RCC_CR_HSEON;
 	while (!(RCC_CR & RCC_CR_HSERDY));
 
@@ -367,12 +360,8 @@ static void clock_setup_in_hse_8mhz_out_72mhz() {
 	 * Set prescalers for AHB, ADC, ABP1, ABP2.
 	 * Do this before touching the PLL (TODO: why?).
 	 */
-	uint32_t reg32 = RCC_CFGR & 0xFFC0000F;
-	reg32 |= (RCC_CFGR_HPRE_SYSCLK_NODIV << 4) | (RCC_CFGR_PPRE1_HCLK_DIV2 << 8) |
-	         (RCC_CFGR_PPRE2_HCLK_NODIV << 11) | (RCC_CFGR_ADCPRE_PCLK2_DIV8 << 14) |
-	         (RCC_CFGR_PLLMUL_PLL_CLK_MUL9 << 18) | (RCC_CFGR_PLLSRC_HSE_CLK << 16) |
-	         (RCC_CFGR_PLLXTPRE_HSE_CLK << 17);
-	RCC_CFGR = reg32;
+        uint32_t reg32 = 0x001f040a;
+	RCC_CFGR       = reg32;
 
 	// 0WS from 0-24MHz
 	// 1WS from 24-48MHz

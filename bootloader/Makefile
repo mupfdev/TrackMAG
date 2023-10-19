@@ -10,14 +10,14 @@ FLASH_BASE_ADDR = 0x08000000
 FLASH_BOOTLDR_PAYLOAD_SIZE_KB = $(shell echo $$(($(FLASH_SIZE) - $(BOOTLOADER_SIZE))))
 
 # Default config
-CONFIG ?= -DWINUSB_SUPPORT -DENABLE_CHECKSUM -DENABLE_WATCHDOG=20
+CONFIG ?= -DWINUSB_SUPPORT -DENABLE_CHECKSUM -DENABLE_WATCHDOG=20 -DENABLE_PINRST_DFU_BOOT -DENABLE_WRITEPROT
 # For GPIO DFU booting:  -DENABLE_GPIO_DFU_BOOT -DGPIO_DFU_BOOT_PORT=GPIOB -DGPIO_DFU_BOOT_PIN=2
 # To protect bootloader from accidental writes: -DENABLE_WRITEPROT
 # To protect your payload from DFU reads: -DENABLE_SAFEWRITE
 
 # Can be overriden with custom VID/PID
-USB_VID ?= 0xdead
-USB_PID ?= 0xca5d
+USB_VID ?= 0x483
+USB_PID ?= 0xdf11
 
 CFLAGS = -Os -ggdb -std=c11 -Wall -pedantic -Werror \
 	-ffunction-sections -fdata-sections -Wno-overlength-strings \
