@@ -195,8 +195,8 @@
     </p>
     <p>
       <button id="connect">Connect</button>
-      <button id="detach" disabled>Detach DFU</button>
     </p>
+
     <dialog id="interfaceDialog">
       Your device has multiple DFU interfaces. Select one from the list below:
       <form id="interfaceForm" method="dialog">
@@ -204,13 +204,19 @@
       </form>
     </dialog>
 
-    <div id="usbInfo" style="white-space: pre"></div>
-    <div id="dfuInfo" style="white-space: pre"></div>
+    <div class="free-standing">
+      <div id="usbInfo" style="white-space: pre"></div>
+      <div id="dfuInfo" style="white-space: pre"></div>
+    </div>
 
     <fieldset>
       <form id="configForm">
         <label for="transferSize">Transfer Size:</label>
-        <input type="number" name="transferSize" id="transferSize" value="1024">
+
+        <div class="free-standing">
+          <input type="number" name="transferSize" id="transferSize" value="1024">
+        </div>
+
         <div id="dfuseFields" hidden="true">
           <label for="dfuseStartAddress">DfuSe Start Address:</label>
           <input type="text" name="dfuseStartAddress" id="dfuseStartAddress" title="Initial memory address to read/write from (hex)" size="10" pattern="0x[A-Fa-f0-9]+">
