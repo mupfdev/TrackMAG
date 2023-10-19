@@ -219,13 +219,22 @@
         </div>
 
         <fieldset>
+          <legend>Flash Firmware</legend>
           <p>
             <input type="file" id="firmwareFile" name="file" disabled>
           </p>
           <p>
-            <button id="download" disabled>Download</button>
+            <button id="download" disabled>Flash</button>
           </p>
           <div class="log" id="downloadLog"></div>
+        </fieldset>
+
+        <fieldset>
+          <legend>Dump Firmware</legend>
+          <p>
+            <button id="upload" disabled>Dump</button>
+          </p>
+          <div class="log" id="uploadLog"></div>
         </fieldset>
       </form>
     </fieldset>
