@@ -2,7 +2,7 @@
 
 TrackMAG is an open source development board equipped with a
 magnetometer, an accelerometer and a gyroscope and it is primarily
-intended for the development and evaluation of accessible input devices.
+intended for the development of accessible input devices.
 
 Details can be found on the [project
 website](https://mupfdev.github.io/TrackMAG/).
