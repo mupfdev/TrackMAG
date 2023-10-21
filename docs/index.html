@@ -48,10 +48,16 @@
 
     <div class="abstract">
       <p>
-        TrackMAG is an open source development board equipped with a
-        magnetometer, an accelerometer and a gyroscope and it is
-        primarily intended for the development of accessible input
-        devices.
+        TrackMAG is an open hardware development board equipped with a
+        magnetometer, an accelerometer and a gyroscope, primarily
+        intended for developing accessible input devices.
+      </p>
+
+      <p>
+        By being compatible with
+        the <a href="https://www.xbox.com/en-US/accessories/controllers/xbox-adaptive-controller">Xbox
+        Adaptive Controller</a>, TrackMAG could possibly support people
+        with physical disabilities to play video games.
       </p>
     </div>
 
@@ -62,28 +68,28 @@
       <ol>
         <li><a href="#about">About</a></li>
         <li><a href="#project-status">Project Status</a></li>
-        <li><a href="#cad-pcb">PCB</a></li>
-        <li><a href="#cad-case">Case</a></li>
+        <li><a href="#cad-pcb">TrackMAG v1 PCB</a></li>
+        <li><a href="#cad-case">TrackMAG v1 Case</a></li>
         <li><a href="#prototype">Prototype</a></li>
         <li><a href="#firmware-update">Firmware Update</a></li>
         <li><a href="#wanna-help">You want to help?</a></li>
-        <li><a href="#licese">License</a></li>
+        <li><a href="#licence">Licence</a></li>
       </ol>
     </nav>
 
     <h3 id="about">About</h3>
 
     <p>
-      TrackMAG is an open source development board equipped with a
+      TrackMAG is an open hardware development board equipped with a
       magnetometer, an accelerometer and a gyroscope.  The project name
       is derived from the first letters of these terms.
     </p>
 
     <p>
-      This board and is primarily intended for the development and
-      evaluation of accessible input devices such as a head tracking
-      device when connected to the Xbox Adaptive Controller from
-      Microsoft.  This is to be fully supported.
+      The board is primarily intended for developing accessible input
+      devices. By being compatible with the Xbox Adaptive Controller,
+      TrackMAG could possibly support people with physical disabilities
+      to play video games.
     </p>
 
     <div class="gallery">
@@ -95,8 +101,8 @@
     <h3 id="project-status">Project Status</h3>
 
     <p>
-      The project is currently in the development stage.  Details on the
-      current progress can be found
+      The project is currently in early prototype status.  Details on
+      the current progress can be found
       on <a href="https://discord.com/invite/5UUhyFP6tj">Discord</a> or
       directly
       on <a href="https://github.com/mupfdev/TrackMAG">GitHub</a>.
@@ -109,13 +115,13 @@
       an <a href="https://github.com/mupfdev/TrackMAG/blob/main/pdf/STM32F103C8.pdf">STM32F103C8T6</a>
       microcontroller,
       an <a href="https://github.com/mupfdev/TrackMAG/blob/main/pdf/LSM6DS3TR-C.pdf">ST
-      LSM6DS3TR-C</a> always-on 3D accelerometer and 3D gyroscope and an
+        LSM6DS3TR-C</a> always-on 3D accelerometer and 3D gyroscope and an
       <a href="https://github.com/mupfdev/TrackMAG/blob/main/pdf/LIS2MDL.pdf">ST LIS2MDL</a> ultra-low power, high-performance 3-axis magnetometer.
     </p>
 
     <p>
-      The board has a JTAG/serial wire debugging (SWD), an UART
-      interface and a USB 2.0 (USB Type-C) full-speed interface.
+      The board has a JTAG/serial wire debugging (SWD), UART, interface
+      and a USB 2.0 (USB Type-C) full-speed interface.
     </p>
 
     <p>
@@ -184,7 +190,7 @@
     <h3 id="prototype">Prototype</h3>
 
     <p>
-      The initial prototype hardware.
+      A few pictures of the initial prototype:
     </p>
 
     <div class="gallery free-standing">
@@ -218,7 +224,7 @@
     </p>
 
     <dialog id="interfaceDialog">
-      Your device has multiple DFU interfaces. Select one from the list below:
+      Your device has multiple DFU interfaces.  Select one from the list below:
       <form id="interfaceForm" method="dialog">
         <button id="selectInterface" type="submit">Select interface</button>
       </form>
@@ -265,7 +271,7 @@
 
     <p>
       <a href="https://github.com/devanlai/webdfu">webdfu</a> by Devan
-      Lai is licensed under the "The ISC License".  See the
+      Lai is licenced under the "The ISC License".  See the
       file <a href="https://github.com/devanlai/webdfu/blob/gh-pages/LICENSE">LICENSE</a>
       for details.
     </p>
@@ -273,24 +279,24 @@
     <h3 id="wanna-help">You want to help?</h3>
 
     <p>
-        If this project interests you and you would like to help, please
-        consider donating a small amount to <a
-        href="http://www.flylillo.com/en/Home.html">flyLILLO ETS</a>, a
-        non-profit organisation with the goal of helping people with
-        physical disabilities to play video games.  Thank you!
+      If this project interests you and you would like to help, please
+      consider donating a small amount
+      to <a href="http://www.flylillo.com/en/Home.html">flyLILLO
+      ETS</a>, a non-profit organisation with the goal of helping people
+      with physical disabilities to play video games.  Thank you!
     </p>
 
-    <h3 id="license">License</h3>
+    <h3 id="licence">Licence</h3>
 
     <p>
-      This project's source code is, unless stated otherwise, licensed
-      under the "The MIT License".  See the
-      file <a href="https://github.com/mupfdev/TrackMAG/blob/main/LICENSE.md">LICENSE.md</a>
-      for details.
+      This project's is, unless stated otherwise, licensed
+      under the " CERN Open Hardware Licence".  See
+      <a href="https://ohwr.org/cern_ohl_p_v2.txt">CERN Open Hardware
+        Licence Version 2 - Permissive</a> for details.
     </p>
 
     <p>
       <a href="/">Go back</a>
     </p>
-</body>
+  </body>
 </html>
