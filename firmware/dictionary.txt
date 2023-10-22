@@ -1,1 +1,9 @@
 magnetometer
+rw
+initialization
+todo
+oct
+michael
+fitzmayer
+aux
+analog

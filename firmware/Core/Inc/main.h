@@ -61,8 +61,10 @@ void Error_Handler(void);
 #define CALIBRATE_GPIO_Port GPIOA
 #define DRDY_Pin GPIO_PIN_13
 #define DRDY_GPIO_Port GPIOB
+#define DRDY_EXTI_IRQn EXTI15_10_IRQn
 #define INT1_Pin GPIO_PIN_14
 #define INT1_GPIO_Port GPIOB
+#define INT1_EXTI_IRQn EXTI15_10_IRQn
 
 /* USER CODE BEGIN Private defines */
 
