@@ -9,6 +9,6 @@ website](https://mupfdev.github.io/TrackMAG/).
 
 # License
 
-This project's source code is, unless stated otherwise, licensed under
-the "The MIT License".  See the file [LICENSE.md](LICENSE.md) for
-details.
+This project is, unless stated otherwise, licensed under the [CERN Open
+Hardware Licence Version 2 -
+Permissive](https://ohwr.org/cern_ohl_p_v2.txt).
