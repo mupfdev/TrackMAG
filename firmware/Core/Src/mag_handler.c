@@ -7,6 +7,7 @@
  *  Todo: Fix interrupts, eliminate polling.
  */
 
+#include <math.h>
 #include <stdint.h>
 #include "cmsis_os.h"
 #include "i2c.h"
@@ -34,10 +35,16 @@ typedef struct
    */
   int16_t mag_soft_hard[3];
 
-} mag_data_t;
+  /*
+   * Yaw and pitch angles.
+   */
+  uint8_t yaw;
+  uint8_t pitch;
+
+} sen_t;
 
 static stmdev_ctx_t dev_ctx;
-static mag_data_t   mag_data;
+static sen_t   sen;
 
 osThreadId_t mag_task_handle;
 const osThreadAttr_t mag_task_attributes =
@@ -72,8 +79,6 @@ void init_mag_handler(void)
 static void mag_task_handler(void *arg)
 {
   uint8_t      data_buffer = 0;
-  uint8_t      x_axis      = 127;
-  uint8_t      y_axis      = 127;
   hid_report_t report;
 
   dev_ctx.write_reg = platform_write;
@@ -336,9 +341,10 @@ write_master_config:
   {
     update_data();
 
-    report.axis[0] = x_axis;
-    report.axis[1] = y_axis;
+    report.axis[0] = sen.yaw;
+    report.axis[1] = sen.pitch;
     usb_send_report(&report);
+
     osDelay(1);
   }
 }
@@ -352,15 +358,15 @@ static void update_data(void)
 
   if (reg.status_reg.xlda)
   {
-    lsm6ds3tr_c_acceleration_raw_get(&dev_ctx, mag_data.acceleration_raw);
+    lsm6ds3tr_c_acceleration_raw_get(&dev_ctx, sen.acceleration_raw);
   }
 
   if (reg.status_reg.gda)
   {
-    lsm6ds3tr_c_angular_rate_raw_get(&dev_ctx, mag_data.angular_rate_raw);
+    lsm6ds3tr_c_angular_rate_raw_get(&dev_ctx, sen.angular_rate_raw);
   }
 
-  lsm6ds3tr_c_mag_calibrated_raw_get(&dev_ctx, mag_data.mag_calibrated_raw);
+  lsm6ds3tr_c_mag_calibrated_raw_get(&dev_ctx, sen.angular_rate_raw);
 
   /* Get the magnetometer calibrated data,
    * with both hard-iron and soft-iron correction.
@@ -373,12 +379,14 @@ static void update_data(void)
   buffer[4] = read_reg(LSM6DS3TR_C_SENSORHUB5_REG);
   buffer[5] = read_reg(LSM6DS3TR_C_SENSORHUB6_REG);
 
-  mag_data.mag_soft_hard[0] = (mag_data.mag_soft_hard[0] & 0xff00) | (buffer[0]);
-  mag_data.mag_soft_hard[0] = (mag_data.mag_soft_hard[0] & 0x00ff) | (buffer[1] << 8);
-  mag_data.mag_soft_hard[1] = (mag_data.mag_soft_hard[1] & 0xff00) | (buffer[2]);
-  mag_data.mag_soft_hard[1] = (mag_data.mag_soft_hard[1] & 0x00ff) | (buffer[3] << 8);
-  mag_data.mag_soft_hard[2] = (mag_data.mag_soft_hard[2] & 0xff00) | (buffer[4]);
-  mag_data.mag_soft_hard[2] = (mag_data.mag_soft_hard[2] & 0x00ff) | (buffer[5] << 8);
+  sen.mag_soft_hard[0] = (sen.mag_soft_hard[0] & 0xff00) | (buffer[0]);
+  sen.mag_soft_hard[0] = (sen.mag_soft_hard[0] & 0x00ff) | (buffer[1] << 8);
+  sen.mag_soft_hard[1] = (sen.mag_soft_hard[1] & 0xff00) | (buffer[2]);
+  sen.mag_soft_hard[1] = (sen.mag_soft_hard[1] & 0x00ff) | (buffer[3] << 8);
+  sen.mag_soft_hard[2] = (sen.mag_soft_hard[2] & 0xff00) | (buffer[4]);
+  sen.mag_soft_hard[2] = (sen.mag_soft_hard[2] & 0x00ff) | (buffer[5] << 8);
+
+  /* Todo: Calculate
 }
 
 static uint8_t read_reg(uint8_t reg)
