@@ -386,7 +386,7 @@ static void update_data(void)
   sen.mag_soft_hard[2] = (sen.mag_soft_hard[2] & 0xff00) | (buffer[4]);
   sen.mag_soft_hard[2] = (sen.mag_soft_hard[2] & 0x00ff) | (buffer[5] << 8);
 
-  /* Todo: Calculate
+  /* Todo: Calculate yaw and pitch. */
 }
 
 static uint8_t read_reg(uint8_t reg)
