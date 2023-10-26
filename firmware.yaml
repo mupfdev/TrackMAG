@@ -1,0 +1,4 @@
+- uses: xanderhendriks/action-build-stm32cubeide@v5.0
+  with:
+    project-path: 'firmware'
+    project-target: 'TrackMAG'
