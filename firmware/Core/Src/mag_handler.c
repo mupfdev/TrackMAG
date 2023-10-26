@@ -7,8 +7,10 @@
  *  Todo: Fix interrupts, eliminate polling.
  */
 
+#include <inttypes.h>
 #include <math.h>
 #include <stdint.h>
+#include <stdio.h>
 #include "cmsis_os.h"
 #include "i2c.h"
 #include "lis2mdl_reg.h"
@@ -16,35 +18,42 @@
 #include "mag_handler.h"
 #include "main.h"
 #include "stm32f1xx_hal.h"
+#include "usart.h"
 #include "usbd_custom_hid_if.h"
+
+#define FILTER_DEPTH 100
+#define PITCH_FACTOR 2.0f
+#define X            1
+#define Y            0
+#define Z            2
 
 typedef struct
 {
   /* Raw acceleration rate data */
-  int16_t acceleration_raw[3];
+  int16_t a[3];
 
   /* Raw angular rate. */
-  int16_t angular_rate_raw[3];
-
-  /* External magnetometer raw data. */
-  int16_t mag_calibrated_raw[3];
+  int16_t g[3];
 
   /* The magnetometer calibrated data,
    * with both hard-iron and soft-iron correction.
    *
    */
-  int16_t mag_soft_hard[3];
+  int16_t m[3];
 
-  /*
-   * Yaw and pitch angles.
-   */
-  uint8_t yaw;
-  uint8_t pitch;
+  float roll;
+  float pitch;
+  float yaw;
+
+  int index;
+
+  int8_t  axis_raw[2][FILTER_DEPTH];
+  int16_t axis_average[2];
 
 } sen_t;
 
 static stmdev_ctx_t dev_ctx;
-static sen_t   sen;
+static sen_t        sen;
 
 osThreadId_t mag_task_handle;
 const osThreadAttr_t mag_task_attributes =
@@ -54,8 +63,16 @@ const osThreadAttr_t mag_task_attributes =
   .priority = (osPriority_t) osPriorityNormal,
 };
 
+osThreadId_t update_data_task_handle;
+const osThreadAttr_t update_data_task_attributes =
+{
+  .name = "update_data_task",
+  .stack_size = 128 * 4,
+  .priority = (osPriority_t) osPriorityNormal,
+};
+
 static void    mag_task_handler(void *arg);
-static void    update_data(void);
+static void    update_data_handler(void *arg);
 static uint8_t read_reg(uint8_t reg);
 static void    write_reg(uint8_t reg, uint8_t data);
 
@@ -126,7 +143,7 @@ static void mag_task_handler(void *arg)
   /* Gyroscope - filtering chain */
   lsm6ds3tr_c_gy_band_pass_set(&dev_ctx, LSM6DS3TR_C_HP_260mHz_LP1_STRONG);
 
-  /* Magnetometer hard-iron / soft-iron correction.
+  /* max_ hard-iron / soft-iron correction.
    * Reference implementation, AN5130, page 72-73.
    *
    * 1. Write 80h to FUNC_CFG_ACCESS
@@ -337,56 +354,86 @@ write_master_config:
    */
   write_reg(LSM6DS3TR_C_CTRL1_XL, 0x80);
 
+  update_data_task_handle = osThreadNew(update_data_handler, NULL, &update_data_task_attributes);
+
   while (1)
   {
-    update_data();
 
-    report.axis[0] = sen.yaw;
-    report.axis[1] = sen.pitch;
+    report.axis[0] = 128;
+    report.axis[1] = sen.axis_average[1] + 128;
     usb_send_report(&report);
 
-    osDelay(1);
+    osDelay(10);
   }
 }
 
-static void update_data(void)
+static void update_data_handler(void *arg)
 {
-  uint8_t buffer[6];
-
+  uint8_t           buffer[6];
   lsm6ds3tr_c_reg_t reg;
-  lsm6ds3tr_c_status_reg_get(&dev_ctx, &reg.status_reg);
 
-  if (reg.status_reg.xlda)
+  sen.index = 0;
+
+  while (1)
   {
-    lsm6ds3tr_c_acceleration_raw_get(&dev_ctx, sen.acceleration_raw);
+    lsm6ds3tr_c_status_reg_get(&dev_ctx, &reg.status_reg);
+
+    if (reg.status_reg.xlda)
+    {
+      lsm6ds3tr_c_acceleration_raw_get(&dev_ctx, sen.a);
+      }
+
+    if (reg.status_reg.gda)
+    {
+      lsm6ds3tr_c_angular_rate_raw_get(&dev_ctx, sen.g);
+    }
+
+    /* Get the max_ calibrated data,
+     * with both hard-iron and soft-iron correction.
+     *
+     */
+    buffer[0] = read_reg(LSM6DS3TR_C_SENSORHUB1_REG);
+    buffer[1] = read_reg(LSM6DS3TR_C_SENSORHUB2_REG);
+    buffer[2] = read_reg(LSM6DS3TR_C_SENSORHUB3_REG);
+    buffer[3] = read_reg(LSM6DS3TR_C_SENSORHUB4_REG);
+    buffer[4] = read_reg(LSM6DS3TR_C_SENSORHUB5_REG);
+    buffer[5] = read_reg(LSM6DS3TR_C_SENSORHUB6_REG);
+
+    sen.m[X] = (sen.m[X] & 0xff00) | (buffer[0]);
+    sen.m[X] = (sen.m[X] & 0x00ff) | (buffer[1] << 8);
+    sen.m[Y] = (sen.m[Y] & 0xff00) | (buffer[2]);
+    sen.m[Y] = (sen.m[Y] & 0x00ff) | (buffer[3] << 8);
+    sen.m[Z] = (sen.m[Z] & 0xff00) | (buffer[4]);
+    sen.m[Z] = (sen.m[Z] & 0x00ff) | (buffer[5] << 8);
+
+    sen.pitch = (180.f * atan(sen.a[X] / sqrt(sen.a[Y] * sen.a[Y] + sen.a[Z] * sen.a[Z])) / M_PI) * PITCH_FACTOR;
+    sen.roll  = (180.f * atan(sen.a[Y] / sqrt(sen.a[X] * sen.a[X] + sen.a[Z] * sen.a[Z])) / M_PI);
+    sen.yaw   = (atan2(sen.m[1], sen.m[0]) * 180.f / M_PI);
+
+    sen.axis_raw[0][sen.index]  = 0;
+    sen.axis_raw[1][sen.index]  = (int8_t)-sen.pitch;
+    sen.index                  += 1;
+
+    if (sen.index >= (FILTER_DEPTH - 1))
+    {
+      sen.index = 0;
+    }
+
+    for (int i = 0; i < 2; i += 1)
+    {
+      int16_t sum         = 0;
+      sen.axis_average[i] = 0;
+
+      for (int iv = 0; iv < FILTER_DEPTH; iv += 1)
+      {
+        sum += sen.axis_raw[i][iv];
+      }
+
+      sen.axis_average[i] = sum / FILTER_DEPTH;
+    }
+
+    osDelay(1);
   }
-
-  if (reg.status_reg.gda)
-  {
-    lsm6ds3tr_c_angular_rate_raw_get(&dev_ctx, sen.angular_rate_raw);
-  }
-
-  lsm6ds3tr_c_mag_calibrated_raw_get(&dev_ctx, sen.angular_rate_raw);
-
-  /* Get the magnetometer calibrated data,
-   * with both hard-iron and soft-iron correction.
-   *
-   */
-  buffer[0] = read_reg(LSM6DS3TR_C_SENSORHUB1_REG);
-  buffer[1] = read_reg(LSM6DS3TR_C_SENSORHUB2_REG);
-  buffer[2] = read_reg(LSM6DS3TR_C_SENSORHUB3_REG);
-  buffer[3] = read_reg(LSM6DS3TR_C_SENSORHUB4_REG);
-  buffer[4] = read_reg(LSM6DS3TR_C_SENSORHUB5_REG);
-  buffer[5] = read_reg(LSM6DS3TR_C_SENSORHUB6_REG);
-
-  sen.mag_soft_hard[0] = (sen.mag_soft_hard[0] & 0xff00) | (buffer[0]);
-  sen.mag_soft_hard[0] = (sen.mag_soft_hard[0] & 0x00ff) | (buffer[1] << 8);
-  sen.mag_soft_hard[1] = (sen.mag_soft_hard[1] & 0xff00) | (buffer[2]);
-  sen.mag_soft_hard[1] = (sen.mag_soft_hard[1] & 0x00ff) | (buffer[3] << 8);
-  sen.mag_soft_hard[2] = (sen.mag_soft_hard[2] & 0xff00) | (buffer[4]);
-  sen.mag_soft_hard[2] = (sen.mag_soft_hard[2] & 0x00ff) | (buffer[5] << 8);
-
-  /* Todo: Calculate yaw and pitch. */
 }
 
 static uint8_t read_reg(uint8_t reg)
