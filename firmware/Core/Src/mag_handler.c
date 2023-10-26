@@ -143,7 +143,7 @@ static void mag_task_handler(void *arg)
   /* Gyroscope - filtering chain */
   lsm6ds3tr_c_gy_band_pass_set(&dev_ctx, LSM6DS3TR_C_HP_260mHz_LP1_STRONG);
 
-  /* max_ hard-iron / soft-iron correction.
+  /* magnetometer hard-iron / soft-iron correction.
    * Reference implementation, AN5130, page 72-73.
    *
    * 1. Write 80h to FUNC_CFG_ACCESS
@@ -388,7 +388,7 @@ static void update_data_handler(void *arg)
       lsm6ds3tr_c_angular_rate_raw_get(&dev_ctx, sen.g);
     }
 
-    /* Get the max_ calibrated data,
+    /* Get the magnetometer calibrated data,
      * with both hard-iron and soft-iron correction.
      *
      */
