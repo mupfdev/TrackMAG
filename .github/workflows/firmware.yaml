@@ -1,5 +1,21 @@
-name: Build TrackMAG firmware
-uses: xanderhendriks/action-build-stm32cubeide@v10.0
-  with:
-  project-path: 'firmware'
-  project-target: 'TrackMAG'
+name: TrackMAG Continuous integration pipeline
+on:
+  push:
+    branches:
+      - main
+jobs:
+  build-sample_application:
+    name: Build the sample application binary
+    runs-on: ubuntu-20.04
+    steps:
+      - name: Checkout the repository
+        uses: actions/checkout@v3.1.0
+      - name: Determine short GIT hash
+        id: short-sha
+        run: |
+          echo "sha=$(echo ${{github.sha}} | sed 's/^\(.\{10\}\).*$/\1/')" >> $GITHUB_OUTPUT
+      - name: Build firmware binary
+        uses: xanderhendriks/action-build-stm32cubeide@v10.0
+        with:
+          project-path: 'firmware'
+          project-target: 'TrackMAG'
