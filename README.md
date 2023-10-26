@@ -1,6 +1,6 @@
 # TrackMAG
 
-[![TrackMAG Continuous integration pipeline](https://github.com/mupfdev/TrackMAG/actions/workflows/firmware.yaml/badge.svg)](https://github.com/mupfdev/TrackMAG/actions/workflows/firmware.yaml)
+[![Firmware](https://github.com/mupfdev/TrackMAG/actions/workflows/firmware.yaml/badge.svg)](https://github.com/mupfdev/TrackMAG/actions/workflows/firmware.yaml)
 
 TrackMAG is an open source development board equipped with a
 magnetometer, an accelerometer and a gyroscope and it is primarily
