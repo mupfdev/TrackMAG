@@ -1,5 +1,5 @@
-- name: Build TrackMAG firmware
-  uses: xanderhendriks/action-build-stm32cubeide@v10.0
+name: Build TrackMAG firmware
+uses: xanderhendriks/action-build-stm32cubeide@v10.0
   with:
-    project-path: 'firmware'
-    project-target: 'TrackMAG'
+  project-path: 'firmware'
+  project-target: 'TrackMAG'
