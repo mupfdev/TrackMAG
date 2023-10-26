@@ -1,4 +1,4 @@
-name: TrackMAG Continuous integration pipeline
+name: Firmware
 on:
   push:
     branches:
