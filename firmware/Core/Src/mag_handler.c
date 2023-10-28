@@ -9,23 +9,20 @@
 
 #include <inttypes.h>
 #include <math.h>
+#include <stdbool.h>
 #include <stdint.h>
-#include <stdio.h>
-#include "cmsis_os.h"
 #include "i2c.h"
 #include "lis2mdl_reg.h"
 #include "lsm6ds3tr-c_reg.h"
 #include "mag_handler.h"
 #include "main.h"
+#include "motion_fx.h"
+#include "motion_fx_cm0p.h"
 #include "stm32f1xx_hal.h"
 #include "usart.h"
 #include "usbd_custom_hid_if.h"
 
-#define FILTER_DEPTH 100
-#define PITCH_FACTOR 2.0f
-#define X            1
-#define Y            0
-#define Z            2
+#define STATE_SIZE (size_t)(2450)
 
 typedef struct
 {
@@ -35,44 +32,35 @@ typedef struct
   /* Raw angular rate. */
   int16_t g[3];
 
+  /* Raw magnetometer data. */
+  int16_t m[3];
+
   /* The magnetometer calibrated data,
    * with both hard-iron and soft-iron correction.
    *
    */
-  int16_t m[3];
+  int16_t mc[3];
 
-  float roll;
-  float pitch;
-  float yaw;
-
-  int index;
-
-  int8_t  axis_raw[2][FILTER_DEPTH];
-  int16_t axis_average[2];
+  int16_t yaw;
+  int16_t pitch;
+  int16_t roll;
 
 } sen_t;
+
+static uint32_t            time_a;
+static uint8_t             mfx[STATE_SIZE];
+static MFX_knobs_t         knobs;
+static MFX_input_t         data_in          = { 0 };
+static MFX_output_t        data_out         = { 0 };
+static MFX_MagCal_input_t  cal_data_in      = { 0 };
+static MFX_MagCal_output_t cal_data_out     = { 0 };
+static bool                calibration_mode = false;
+
 
 static stmdev_ctx_t dev_ctx;
 static sen_t        sen;
 
-osThreadId_t mag_task_handle;
-const osThreadAttr_t mag_task_attributes =
-{
-  .name = "mag_task",
-  .stack_size = 128 * 4,
-  .priority = (osPriority_t) osPriorityNormal,
-};
-
-osThreadId_t update_data_task_handle;
-const osThreadAttr_t update_data_task_attributes =
-{
-  .name = "update_data_task",
-  .stack_size = 128 * 4,
-  .priority = (osPriority_t) osPriorityNormal,
-};
-
-static void    mag_task_handler(void *arg);
-static void    update_data_handler(void *arg);
+static void    update_data(void);
 static uint8_t read_reg(uint8_t reg);
 static void    write_reg(uint8_t reg, uint8_t data);
 
@@ -88,15 +76,9 @@ static int32_t platform_read(void *handle, uint8_t reg, uint8_t *bufp, uint16_t 
   return 0;
 }
 
-void init_mag_handler(void)
+void init_mag(void)
 {
-  mag_task_handle = osThreadNew(mag_task_handler, NULL, &mag_task_attributes);
-}
-
-static void mag_task_handler(void *arg)
-{
-  uint8_t      data_buffer = 0;
-  hid_report_t report;
+  uint8_t data_buffer = 0;
 
   dev_ctx.write_reg = platform_write;
   dev_ctx.read_reg  = platform_read;
@@ -105,7 +87,7 @@ static void mag_task_handler(void *arg)
   /* After the power supply is applied, the LSM6DS3TR-C performs a
    * 15ms boot procedure to load the trimming parameters.
    */
-  osDelay(15);
+  HAL_Delay(15);
 
   /* Check if LSM6DS3TR-C is present. */
   lsm6ds3tr_c_device_id_get(&dev_ctx, &data_buffer);
@@ -354,44 +336,100 @@ write_master_config:
    */
   write_reg(LSM6DS3TR_C_CTRL1_XL, 0x80);
 
-  update_data_task_handle = osThreadNew(update_data_handler, NULL, &update_data_task_attributes);
+  MotionFX_initialize((MFXState_t *)mfx);
+  MotionFX_getKnobs(mfx, &knobs);
 
-  while (1)
-  {
+  MotionFX_setKnobs(mfx, &knobs);
+  MotionFX_enable_6X(mfx, MFX_ENGINE_DISABLE);
+  MotionFX_enable_9X(mfx, MFX_ENGINE_ENABLE);
 
-    report.axis[0] = 128;
-    report.axis[1] = sen.axis_average[1] + 128;
-    usb_send_report(&report);
+  knobs.ATime                             = knobs.ATime;
+  knobs.MTime                             = knobs.MTime;
+  knobs.FrTime                            = knobs.FrTime;
+  knobs.LMode                             = 2U;
+  knobs.gbias_mag_th_sc                   = 1.11181867;
+  knobs.gbias_acc_th_sc                   = 2.45545983;
+  knobs.gbias_gyro_th_sc                  = 0.0115696611;
+  knobs.modx                              = 2U;
+  knobs.acc_orientation[0]                = 'e';
+  knobs.acc_orientation[1]                = 'n';
+  knobs.acc_orientation[2]                = 'u';
+  knobs.gyro_orientation[0]               = 'e';
+  knobs.gyro_orientation[1]               = 'n';
+  knobs.gyro_orientation[2]               = 'u';
+  knobs.mag_orientation[0]                = 'e';
+  knobs.mag_orientation[1]                = 's';
+  knobs.mag_orientation[2]                = 'u';
+  knobs.output_type                       = MFX_ENGINE_OUTPUT_ENU;
+  knobs.start_automatic_gbias_calculation = 0;
 
-    osDelay(10);
-  }
+  MotionFX_setKnobs(mfx, &knobs);
+
+  time_a = HAL_GetTick();
 }
 
-static void update_data_handler(void *arg)
+void update_mag(void)
 {
+  hid_report_t report;
+  update_data();
+
+  //report.axis[0] = sen.axis_average[0] + 128;
+  //report.axis[1] = sen.axis_average[1] + 128;
+  usb_send_report(&report);
+}
+
+static void update_data(void)
+{
+  uint32_t          time_b;
+  float             delta_time;
   uint8_t           buffer[6];
   lsm6ds3tr_c_reg_t reg;
 
-  sen.index = 0;
+  lsm6ds3tr_c_status_reg_get(&dev_ctx, &reg.status_reg);
 
-  while (1)
+  if (reg.status_reg.xlda)
   {
-    lsm6ds3tr_c_status_reg_get(&dev_ctx, &reg.status_reg);
+    lsm6ds3tr_c_acceleration_raw_get(&dev_ctx, sen.a);
 
-    if (reg.status_reg.xlda)
-    {
-      lsm6ds3tr_c_acceleration_raw_get(&dev_ctx, sen.a);
-      }
+    /* Acceleration in g */
+    data_in.acc[0] = sen.a[0];
+    data_in.acc[1] = sen.a[1];
+    data_in.acc[2] = sen.a[2];
+  }
 
-    if (reg.status_reg.gda)
+  if (reg.status_reg.gda)
+  {
+    lsm6ds3tr_c_angular_rate_raw_get(&dev_ctx, sen.g);
+
+    /* Angular rate in dps */
+    data_in.gyro[0] = sen.g[0];
+    data_in.gyro[1] = sen.g[1];
+    data_in.gyro[2] = sen.g[2];
+  }
+
+  if (reg.func_src1.sensorhub_end_op)
+  {
+    lsm6ds3tr_c_mag_calibrated_raw_get(&dev_ctx, sen.m);
+
+    /* Magnetic field in uT/50 */
+    data_in.mag[0] = sen.m[0];
+    data_in.mag[1] = sen.m[1];
+    data_in.mag[2] = sen.m[2];
+
+    if (true == calibration_mode)
     {
-      lsm6ds3tr_c_angular_rate_raw_get(&dev_ctx, sen.g);
+      cal_data_in.mag[0] = sen.m[0];
+      cal_data_in.mag[1] = sen.m[1];
+      cal_data_in.mag[2] = sen.m[2];
     }
+  }
 
-    /* Get the magnetometer calibrated data,
-     * with both hard-iron and soft-iron correction.
-     *
-     */
+  /* Get the magnetometer calibrated data,
+   * with both hard-iron and soft-iron correction.
+   *
+   */
+  if (reg.func_src1.si_end_op)
+  {
     buffer[0] = read_reg(LSM6DS3TR_C_SENSORHUB1_REG);
     buffer[1] = read_reg(LSM6DS3TR_C_SENSORHUB2_REG);
     buffer[2] = read_reg(LSM6DS3TR_C_SENSORHUB3_REG);
@@ -399,40 +437,41 @@ static void update_data_handler(void *arg)
     buffer[4] = read_reg(LSM6DS3TR_C_SENSORHUB5_REG);
     buffer[5] = read_reg(LSM6DS3TR_C_SENSORHUB6_REG);
 
-    sen.m[X] = (sen.m[X] & 0xff00) | (buffer[0]);
-    sen.m[X] = (sen.m[X] & 0x00ff) | (buffer[1] << 8);
-    sen.m[Y] = (sen.m[Y] & 0xff00) | (buffer[2]);
-    sen.m[Y] = (sen.m[Y] & 0x00ff) | (buffer[3] << 8);
-    sen.m[Z] = (sen.m[Z] & 0xff00) | (buffer[4]);
-    sen.m[Z] = (sen.m[Z] & 0x00ff) | (buffer[5] << 8);
+    sen.mc[0] = (sen.mc[0] & 0xff00) | (buffer[0]);
+    sen.mc[0] = (sen.mc[0] & 0x00ff) | (buffer[1] << 8);
+    sen.mc[1] = (sen.mc[1] & 0xff00) | (buffer[2]);
+    sen.mc[1] = (sen.mc[1] & 0x00ff) | (buffer[3] << 8);
+    sen.mc[2] = (sen.mc[2] & 0xff00) | (buffer[4]);
+    sen.mc[2] = (sen.mc[2] & 0x00ff) | (buffer[5] << 8);
+  }
 
-    sen.pitch = (180.f * atan(sen.a[X] / sqrt(sen.a[Y] * sen.a[Y] + sen.a[Z] * sen.a[Z])) / M_PI) * PITCH_FACTOR;
-    sen.roll  = (180.f * atan(sen.a[Y] / sqrt(sen.a[X] * sen.a[X] + sen.a[Z] * sen.a[Z])) / M_PI);
-    sen.yaw   = (atan2(sen.m[1], sen.m[0]) * 180.f / M_PI);
+  time_b = HAL_GetTick();
+  delta_time = (time_b / 1000.f) - (time_a / 1000.f);
+  if (false == calibration_mode)
+  {
+    MotionFX_propagate(mfx, &data_out, &data_in, &delta_time);
+    time_a = HAL_GetTick();
+  }
 
-    sen.axis_raw[0][sen.index]  = 0;
-    sen.axis_raw[1][sen.index]  = (int8_t)-sen.pitch;
-    sen.index                  += 1;
+  sen.yaw   = (int16_t)data_out.rotation[0];
+  sen.pitch = (int16_t)data_out.rotation[1];
+  sen.roll  = (int16_t)data_out.rotation[2];
 
-    if (sen.index >= (FILTER_DEPTH - 1))
+  if (true == calibration_mode)
+  {
+    time_a = HAL_GetTick();
+
+    MotionFX_MagCal_run(&cal_data_in);
+    MotionFX_update(mfx, &data_out, &data_in, &delta_time, NULL);
+    time_a = HAL_GetTick();
+    MotionFX_MagCal_getParams(&cal_data_out);
+    cal_data_in.time_stamp += 40;
+
+    if (MFX_MAGCALGOOD == cal_data_out.cal_quality)
     {
-      sen.index = 0;
+      calibration_mode = false;
     }
-
-    for (int i = 0; i < 2; i += 1)
-    {
-      int16_t sum         = 0;
-      sen.axis_average[i] = 0;
-
-      for (int iv = 0; iv < FILTER_DEPTH; iv += 1)
-      {
-        sum += sen.axis_raw[i][iv];
-      }
-
-      sen.axis_average[i] = sum / FILTER_DEPTH;
-    }
-
-    osDelay(1);
+    HAL_Delay(30);
   }
 }
 
@@ -468,5 +507,10 @@ void HAL_GPIO_EXTI_Callback(uint16_t GPIO_Pin)
   else if (INT1_Pin == GPIO_Pin)
   {
     asm("NOP");
+  }
+  else if (CALIBRATE_Pin == GPIO_Pin)
+  {
+    calibration_mode = true;
+    MotionFX_MagCal_init(40, 1);
   }
 }

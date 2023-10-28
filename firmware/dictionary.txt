@@ -14,3 +14,10 @@ mahony
 radians
 atan
 sqrt
+dps
+initializes
+systick
+init
+initialize
+retval
+int

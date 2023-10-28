@@ -59,6 +59,7 @@ void Error_Handler(void);
 /* Private defines -----------------------------------------------------------*/
 #define CALIBRATE_Pin GPIO_PIN_5
 #define CALIBRATE_GPIO_Port GPIOA
+#define CALIBRATE_EXTI_IRQn EXTI9_5_IRQn
 #define DRDY_Pin GPIO_PIN_13
 #define DRDY_GPIO_Port GPIOB
 #define DRDY_EXTI_IRQn EXTI15_10_IRQn

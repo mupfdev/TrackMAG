@@ -8,6 +8,7 @@
 #ifndef MAG_HANDLER_H
 #define MAG_SENSOR_HANDLER_H
 
-void init_mag_handler(void);
+void init_mag(void);
+void update_mag(void);
 
 #endif /* MAG_HANDLER_H */
