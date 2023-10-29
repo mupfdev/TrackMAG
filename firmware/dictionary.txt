@@ -21,3 +21,5 @@ init
 initialize
 retval
 int
+mgauss
+microtesla

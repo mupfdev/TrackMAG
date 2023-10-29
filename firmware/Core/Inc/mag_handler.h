@@ -8,7 +8,14 @@
 #ifndef MAG_HANDLER_H
 #define MAG_SENSOR_HANDLER_H
 
-void init_mag(void);
-void update_mag(void);
+typedef enum
+{
+  MAG_INIT = 0,
+  MAG_RUN,
+  MAG_CALIBRATION
+
+} mag_state_t;
+
+void mag_update(mag_state_t* state);
 
 #endif /* MAG_HANDLER_H */
