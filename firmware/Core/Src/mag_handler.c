@@ -122,7 +122,7 @@ void mag_update(mag_state_t* state)
       lis2mdl_operating_mode_set(&hmag.ctx, LIS2MDL_CONTINUOUS_MODE);
 
       /* Set data rate. */
-      lis2mdl_data_rate_set(&hmag.ctx, LIS2MDL_ODR_20Hz);
+      lis2mdl_data_rate_set(&hmag.ctx, LIS2MDL_ODR_50Hz);
 
       /* Enable temperature compensation. */
       lis2mdl_offset_temp_comp_set(&hmag.ctx, 1);
@@ -154,6 +154,14 @@ void mag_update(mag_state_t* state)
       /* Set full scale. */
       lsm6ds3tr_c_xl_full_scale_set(&hmag.ctx, LSM6DS3TR_C_2g);
       lsm6ds3tr_c_gy_full_scale_set(&hmag.ctx, LSM6DS3TR_C_2000dps);
+
+      /* Configure filtering chain (no aux interface). */
+      /* Accelerometer - analog filter */
+      lsm6ds3tr_c_xl_filter_analog_set(&hmag.ctx, LSM6DS3TR_C_XL_ANA_BW_400Hz);
+      /* Accelerometer - LPF1 + LPF2 path. */
+      lsm6ds3tr_c_xl_lp2_bandwidth_set(&hmag.ctx, LSM6DS3TR_C_XL_LOW_NOISE_LP_ODR_DIV_100);
+      /* Gyroscope - filtering chain. */
+      lsm6ds3tr_c_gy_band_pass_set(&hmag.ctx, LSM6DS3TR_C_HP_260mHz_LP1_STRONG);
 
       /* Set Output Data Rate. */
       lsm6ds3tr_c_xl_data_rate_set(&hmag.ctx, LSM6DS3TR_C_XL_ODR_104Hz);
