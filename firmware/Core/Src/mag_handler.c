@@ -193,7 +193,7 @@ void mag_update(mag_state_t* state)
       hmag.knobs.mag_orientation[1]                = 's';
       hmag.knobs.mag_orientation[2]                = 'u';
       hmag.knobs.output_type                       = MFX_ENGINE_OUTPUT_ENU;
-      hmag.knobs.start_automatic_gbias_calculation = 1;
+      hmag.knobs.start_automatic_gbias_calculation = 0;
 
       MotionFX_setKnobs(hmag.mfx, &hmag.knobs);
 
