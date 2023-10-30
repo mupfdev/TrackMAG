@@ -68,7 +68,7 @@ void SystemClock_Config(void);
 int main(void)
 {
   /* USER CODE BEGIN 1 */
-  mag_state_t state = MAG_INIT;
+   mag_state_t state = MAG_INIT;
   /* USER CODE END 1 */
 
   /* MCU Configuration--------------------------------------------------------*/
@@ -104,7 +104,10 @@ int main(void)
     /* USER CODE END WHILE */
 
     /* USER CODE BEGIN 3 */
-    HAL_Delay(10);
+
+    /* DO NOT add an additional delay here!
+     * Sample time is handled by mag_update()
+     */
   }
   /* USER CODE END 3 */
 }

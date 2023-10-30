@@ -11,8 +11,7 @@
 typedef enum
 {
   MAG_INIT = 0,
-  MAG_RUN,
-  MAG_CALIBRATION
+  MAG_RUN
 
 } mag_state_t;
 
