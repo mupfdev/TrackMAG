@@ -85,13 +85,6 @@ SECTIONS
     . = ALIGN(4);
   } >FLASH
 
-  .user_data :
-  {
-    . = ALIGN(4);
-     KEEP(*(.user_data))
-    . = ALIGN(4);
-  } > DATA
-
   .ARM.extab   : {
     . = ALIGN(4);
     *(.ARM.extab* .gnu.linkonce.armextab.*)
