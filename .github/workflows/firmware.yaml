@@ -1,11 +1,11 @@
 name: Firmware
 on:
   push:
-    branches:
-      - main
+    paths:
+      - firmware/**
 jobs:
   build-firmware:
-    name: Build firmware.
+    name: Build firmware
     runs-on: ubuntu-20.04
     steps:
       - name: Checkout the repository
@@ -14,15 +14,15 @@ jobs:
         id: short-sha
         run: |
           echo "sha=$(echo ${{github.sha}} | sed 's/^\(.\{10\}\).*$/\1/')" >> $GITHUB_OUTPUT
-      - name: Build firmware.
+      - name: Build firmware
         uses: xanderhendriks/action-build-stm32cubeide@v10.0
         with:
           project-path: 'firmware'
           project-target: 'TrackMAG'
-      - name: Setup Python.
+      - name: Setup Python
         uses: actions/setup-python@v2
         with:
           python-version: 3.8
-      - name: Patch firmware header.
+      - name: Patch firmware header
         run: |
           python bootloader/checksum.py firmware/Release/TrackMAG.bin

@@ -233,7 +233,7 @@ void mag_update(mag_state_t* state)
       MotionFX_propagate(hmag.mfx, &hmag.data_out, &hmag.data_in, &hmag.sample_time_sec);
       MotionFX_update(hmag.mfx, &hmag.data_out, &hmag.data_in, &hmag.sample_time_sec, NULL);
 
-      if (true == hmeg.calibration_mode)
+      if (true == hmag.calibration_mode)
       {
         x_axis = AXIS_CENTER;
         y_axis = AXIS_CENTER;
