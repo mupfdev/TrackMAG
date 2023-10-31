@@ -25,4 +25,6 @@ jobs:
           python-version: 3.8
       - name: Patch firmware header
         run: |
-          python bootloader/checksum.py firmware/Release/TrackMAG.bin
+          mkdir export
+          cp firmware/Release/TrackMAG.bin export/
+          python bootloader/checksum.py export/TrackMAG.bin
