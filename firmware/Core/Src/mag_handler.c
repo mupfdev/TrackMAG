@@ -243,6 +243,15 @@ void mag_update(mag_state_t* state)
         /* Todo: Calculate axis. */
       }
 
+      {
+        char output[40] = { 0 };
+        snprintf(output, 40, "Orientation: %.2f,%.2f,%.2f\r\n",
+            hmag.data_out.heading,
+            hmag.data_out.rotation[1],
+            hmag.data_out.rotation[2]);
+        HAL_UART_Transmit_DMA(&huart2, (const uint8_t*)output, strnlen((const char*)output, 40));
+      }
+
       break;
     default:
       break;
