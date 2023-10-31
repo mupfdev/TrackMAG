@@ -1,4 +1,4 @@
-name: Firmware
+name: firmware
 on:
   push:
     paths:
@@ -28,6 +28,8 @@ jobs:
           cp -f firmware/Release/TrackMAG.bin docs/TrackMAG-latest.bin
           python bootloader/checksum.py docs/TrackMAG-latest.bin
       - name: Upload firmware to project website
+        permissions:
+          contents: write
         uses: EndBug/add-and-commit@v9 # You can change this to use a specific version.
         with:
           add: 'docs/TrackMAG-latest.bin'
