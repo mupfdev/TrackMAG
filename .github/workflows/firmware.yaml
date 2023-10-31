@@ -26,10 +26,9 @@ jobs:
       - name: Patch firmware header
         run: |
           mkdir binaries
-          cp firmware/Release/TrackMAG.bin binaries/
-          python bootloader/checksum.py binaries/TrackMAG.bin
+          cp firmware/Release/TrackMAG.bin binaries/TrackMAG-latest.bin
+          python bootloader/checksum.py binaries/TrackMAG-latest.bin
       - name: Upload firmware binary
         uses: actions/upload-artifact@v3.1.3
         with:
-          name: binaries/TrackMAG.bin
           path: binaries/TrackMAG-latest.bin
