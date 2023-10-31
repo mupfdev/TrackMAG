@@ -23,7 +23,7 @@
 
 #define FROM_MGAUSS_TO_UT50 (0.1f/50.0f)
 #define STATE_SIZE          (size_t)(2450)
-#define CONFIG_FLASH_ADDR   0x8001d000
+#define CONFIG_FLASH_ADDR   0x0801fc00
 
 typedef struct
 {
@@ -68,7 +68,7 @@ static int32_t platform_write(void *handle, uint8_t reg, const uint8_t *bufp, ui
 static void    pass_through_enable(void);
 static void    pass_through_disable(void);
 static void    poll_data(void);
-static void    config_read(mag_config_t *config);
+static void    config_read(__IO mag_config_t *config);
 static void    config_write(mag_config_t *config);
 
 void mag_update(mag_state_t* state)
@@ -336,17 +336,56 @@ static void poll_data(void)
   pass_through_disable();
 }
 
-static void config_read(mag_config_t *config)
+static void config_read(__IO mag_config_t *config)
 {
-  /* Todo: Implement config_read(). */
-  config->hi_bias[0] = -0.188000008f;
-  config->hi_bias[1] = -0.520000041f;
-  config->hi_bias[2] = 0.476000011f;
+  *config = *(__IO mag_config_t *)CONFIG_FLASH_ADDR;
 }
 
 static void config_write(mag_config_t *config)
 {
-  /* Todo: Implement config_write(). */
+  HAL_StatusTypeDef      status;
+  FLASH_EraseInitTypeDef erase_init;
+  uint32_t               page_error;
+
+  HAL_FLASH_Unlock();
+
+  erase_init.TypeErase   = FLASH_TYPEERASE_PAGES;
+  erase_init.PageAddress = CONFIG_FLASH_ADDR;
+  erase_init.NbPages     = 1;
+
+  status = HAL_FLASHEx_Erase(&erase_init, &page_error);
+  if (HAL_OK != status)
+  {
+    Error_Handler();
+  }
+
+  status = FLASH_WaitForLastOperation(100);
+  if (HAL_OK != status)
+  {
+    Error_Handler();
+  }
+
+  for (int p = 0; p < 3; p += 1)
+  {
+    uint64_t data = 0;
+
+    memcpy(&data, &config->hi_bias[p], sizeof(float));
+
+    HAL_FLASH_Program(FLASH_TYPEPROGRAM_WORD, CONFIG_FLASH_ADDR + (p * sizeof(float)), data);
+    status = FLASH_WaitForLastOperation(100);
+    if (HAL_OK != status)
+    {
+      Error_Handler();
+    }
+
+    status = FLASH_WaitForLastOperation(100);
+    if (HAL_OK != status)
+    {
+      Error_Handler();
+    }
+  }
+
+  HAL_FLASH_Lock();
 }
 
 void HAL_GPIO_EXTI_Callback(uint16_t GPIO_Pin)
