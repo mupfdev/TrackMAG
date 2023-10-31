@@ -21,9 +21,10 @@
 #include "usart.h"
 #include "usbd_custom_hid_if.h"
 
+#define AXIS_CENTER         128
+#define CONFIG_FLASH_ADDR   0x0801fc00
 #define FROM_MGAUSS_TO_UT50 (0.1f/50.0f)
 #define STATE_SIZE          (size_t)(2450)
-#define CONFIG_FLASH_ADDR   0x0801fc00
 
 typedef struct
 {
@@ -76,8 +77,8 @@ void mag_update(mag_state_t* state)
   mag_config_t config      = { 0 };
   hid_report_t report      = { 0 };
   uint8_t      data_buffer = 0;
-  uint8_t      x_axis      = 128;
-  uint8_t      y_axis      = 128;
+  uint8_t      x_axis      = AXIS_CENTER;
+  uint8_t      y_axis      = AXIS_CENTER;
 
   switch (*state)
   {
@@ -231,6 +232,16 @@ void mag_update(mag_state_t* state)
 
       MotionFX_propagate(hmag.mfx, &hmag.data_out, &hmag.data_in, &hmag.sample_time_sec);
       MotionFX_update(hmag.mfx, &hmag.data_out, &hmag.data_in, &hmag.sample_time_sec, NULL);
+
+      if (true == hmeg.calibration_mode)
+      {
+        x_axis = AXIS_CENTER;
+        y_axis = AXIS_CENTER;
+      }
+      else
+      {
+        /* Todo: Calculate axis. */
+      }
 
       break;
     default:
