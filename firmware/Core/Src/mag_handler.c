@@ -1,7 +1,7 @@
 /*
  * mag_handler.c
  *
- *  Created on: Oct 29, 2023
+ *  Created on: Oct 20, 2023
  *      Author: Michael Fitzmayer
  */
 

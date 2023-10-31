@@ -9,7 +9,7 @@ jobs:
     runs-on: ubuntu-20.04
     steps:
       - name: Checkout the repository
-        uses: actions/checkout@v3.1.0
+        uses: actions/checkout@v3
       - name: Determine short GIT hash
         id: short-sha
         run: |
@@ -20,15 +20,19 @@ jobs:
           project-path: 'firmware'
           project-target: 'TrackMAG'
       - name: Setup Python
-        uses: actions/setup-python@v2
+        uses: actions/setup-python@v4
         with:
           python-version: 3.8
       - name: Patch firmware header
         run: |
-          mkdir binaries
-          cp firmware/Release/TrackMAG.bin binaries/TrackMAG-latest.bin
-          python bootloader/checksum.py binaries/TrackMAG-latest.bin
-      - name: Upload firmware binary
-        uses: actions/upload-artifact@v3.1.3
+          cp -f firmware/Release/TrackMAG.bin docs/TrackMAG-latest.bin
+          python bootloader/checksum.py docs/TrackMAG-latest.bin
+      - name: Upload firmware to project website
+        uses: stefanzweifel/git-auto-commit-action@v5
+        with:
+            commit_message: Upload firmware to project website
+            file_pattern: 'docs/TrackMAG-latest.bin'
+      - name: Upload artifacts
+        uses: actions/upload-artifact@v3
         with:
           path: binaries/TrackMAG-latest.bin
