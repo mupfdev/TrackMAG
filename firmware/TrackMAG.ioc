@@ -74,7 +74,6 @@ NVIC.SysTick_IRQn=true\:15\:0\:false\:false\:true\:false\:true\:false
 NVIC.TIM1_UP_IRQn=true\:15\:0\:false\:false\:true\:false\:true\:true
 NVIC.TimeBase=TIM1_UP_IRQn
 NVIC.TimeBaseIP=TIM1
-NVIC.USART2_IRQn=true\:0\:0\:false\:false\:true\:true\:true\:true
 NVIC.USB_LP_CAN1_RX0_IRQn=true\:0\:0\:false\:false\:true\:false\:true\:true
 NVIC.UsageFault_IRQn=true\:0\:0\:false\:false\:true\:false\:false\:false
 PA11.Mode=Device
