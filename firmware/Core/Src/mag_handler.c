@@ -66,7 +66,7 @@ typedef struct
   uint32_t            calib_press_timer_init;
 
   /* Axis calculation. */
-  uint16_t            view_direction;
+  uint32_t            view_direction;
 
   /* Miscellaneous. */
   uint8_t             sample_time_ms;
@@ -84,7 +84,7 @@ static void    pass_through_disable(void);
 static void    accel_gyro_data_read(void);
 static void    magnetometer_data_read(void);
 static void    config_read(__IO mag_config_t *config);
-static void    config_write(mag_config_t *config);
+static void    config_write(void);
 
 void mag_update(mag_state_t* state)
 {
@@ -227,6 +227,7 @@ void mag_update(mag_state_t* state)
 
       break;
     case MAG_RUN:
+#if defined (DEBUG)
       if (1 == hmag.knobs.start_automatic_gbias_calculation)
       {
         if (HAL_GetTick() > 10000)
@@ -235,6 +236,7 @@ void mag_update(mag_state_t* state)
           asm("NOP");
         }
       }
+#endif
 
       if (true == hmag.start_calib_press_timer)
       {
@@ -273,16 +275,9 @@ void mag_update(mag_state_t* state)
 
         if (MFX_MAGCALGOOD == hmag.cal_data_out.cal_quality)
         {
-          mag_config_t config;
-
           hmag.calibration_mode = false;
-          hmag.m_offset[0]      = config.hi_bias[0] * FROM_UT50_TO_MGAUSS;
-          hmag.m_offset[1]      = config.hi_bias[1] * FROM_UT50_TO_MGAUSS;
-          hmag.m_offset[2]      = config.hi_bias[2] * FROM_UT50_TO_MGAUSS;
-
           MotionFX_MagCal_init(40, 0);
-
-          config_write(&config);
+          config_write();
         }
       }
 
@@ -296,21 +291,9 @@ void mag_update(mag_state_t* state)
       }
       else
       {
-        /* This does not work yet. */
-
-        int16_t yaw_delta      = (360 - hmag.view_direction + (int16_t)hmag.data_out.heading + 180) % 360 - 180;
-        int16_t yaw_normalised = (255 * (180 + yaw_delta) / 359);
-
-        if (yaw_normalised < 0)
-        {
-          yaw_normalised = 0;
-        }
-        else if (yaw_normalised >= 255)
-        {
-          yaw_normalised = 255;
-        }
-
-        x_axis = (uint8_t)yaw_normalised;
+        int16_t yaw_delta = (360 - hmag.view_direction + (int)hmag.data_out.heading + 180) % 360 - 180;
+        //float yaw_normalised = (yaw_delta - (-180.f)) / (360.f) * (2.f) + (-1.f); /* -1.f to 1.f */
+        x_axis = (255 * (180 + yaw_delta) / 359);
       }
 
       {
@@ -390,14 +373,18 @@ static void config_read(__IO mag_config_t *config)
   *config = *(__IO mag_config_t *)CONFIG_FLASH_ADDR;
 }
 
-static void config_write(mag_config_t *config)
+static void config_write(void)
 {
   HAL_StatusTypeDef      status;
   FLASH_EraseInitTypeDef erase_init;
   uint32_t               page_error;
+  mag_config_t           config;
 
   HAL_FLASH_Unlock();
 
+  config.hi_bias[0]      = hmag.cal_data_out.hi_bias[0];
+  config.hi_bias[1]      = hmag.cal_data_out.hi_bias[1];
+  config.hi_bias[2]      = hmag.cal_data_out.hi_bias[2];
   erase_init.TypeErase   = FLASH_TYPEERASE_PAGES;
   erase_init.PageAddress = CONFIG_FLASH_ADDR;
   erase_init.NbPages     = 1;
@@ -418,10 +405,9 @@ static void config_write(mag_config_t *config)
   {
     uint64_t data = 0;
 
-    memcpy(&data, &config->hi_bias[p], sizeof(float));
+    memcpy(&data, &config.hi_bias[p], sizeof(float));
 
-    HAL_FLASH_Program(FLASH_TYPEPROGRAM_WORD, CONFIG_FLASH_ADDR + (p * sizeof(float)), data);
-    status = FLASH_WaitForLastOperation(100);
+    status = HAL_FLASH_Program(FLASH_TYPEPROGRAM_WORD, CONFIG_FLASH_ADDR + (p * sizeof(float)), data);
     if (HAL_OK != status)
     {
       Error_Handler();
@@ -449,7 +435,7 @@ void HAL_GPIO_EXTI_Callback(uint16_t GPIO_Pin)
       }
       else
       {
-        hmag.view_direction          = (int16_t)hmag.data_out.heading;
+        hmag.view_direction          = (uint32_t)hmag.data_out.heading;
         hmag.start_calib_press_timer = true;
         hmag.calib_press_timer_init  = HAL_GetTick();
       }
