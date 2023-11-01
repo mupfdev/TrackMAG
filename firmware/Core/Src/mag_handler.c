@@ -1,7 +1,7 @@
 /*
  * mag_handler.c
  *
- *  Created on: Oct 29, 2023
+ *  Created on: Oct 20, 2023
  *      Author: Michael Fitzmayer
  */
 
@@ -87,9 +87,9 @@ void mag_update(mag_state_t* state)
 
       config_read(&config);
 
-      hmag.cal_data_out.hi_bias[0] = config.hi_bias[0];
-      hmag.cal_data_out.hi_bias[1] = config.hi_bias[1];
-      hmag.cal_data_out.hi_bias[2] = config.hi_bias[2];
+      hmag.cal_data_out.hi_bias[0] = isnan(config.hi_bias[0]) ? 0.f : config.hi_bias[0];
+      hmag.cal_data_out.hi_bias[1] = isnan(config.hi_bias[1]) ? 0.f : config.hi_bias[1];
+      hmag.cal_data_out.hi_bias[2] = isnan(config.hi_bias[2]) ? 0.f : config.hi_bias[2];
 
       hmag.sample_time_ms = 10;
       hmag.i2c_addr       = LSM6DS3TR_C_I2C_ADD_L;
