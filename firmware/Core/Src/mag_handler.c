@@ -21,10 +21,11 @@
 #include "usart.h"
 #include "usbd_custom_hid_if.h"
 
-#define AXIS_CENTER         128
-#define CONFIG_FLASH_ADDR   0x0801fc00
-#define FROM_MGAUSS_TO_UT50 (0.1f/50.0f)
-#define STATE_SIZE          (size_t)(2450)
+#define AXIS_CENTER                  128u
+#define CALIB_MODE_PRESS_DURATION_MS 3000u
+#define CONFIG_FLASH_ADDR            0x0801fc00
+#define FROM_MGAUSS_TO_UT50          (0.1f/50.0f)
+#define STATE_SIZE                   (size_t)(2450)
 
 typedef struct
 {
@@ -34,6 +35,15 @@ typedef struct
 
 typedef struct
 {
+  /* Raw acceleration rate data. */
+  int16_t             a[3];
+
+  /* Raw angular rate. */
+  int16_t             g[3];
+
+  /* Raw magnetometer data. */
+  int16_t             m[3];
+
   /* I²C interface for LSM6DS3TR-C and LIS2MDL. */
   stmdev_ctx_t        ctx;
 
@@ -45,20 +55,19 @@ typedef struct
   MFX_MagCal_input_t  cal_data_in;
   MFX_MagCal_output_t cal_data_out;
 
-  /* Raw acceleration rate data. */
-  int16_t             a[3];
+  /* Calibration mode. */
+  bool                calibration_mode;
+  bool                start_calib_press_timer;
+  uint32_t            calib_press_timer;
+  uint32_t            calib_press_timer_init;
 
-  /* Raw angular rate. */
-  int16_t             g[3];
+  /* Axis calculation. */
+  uint16_t            view_direction;
 
-  /* Raw magnetometer data. */
-  int16_t             m[3];
-
+  /* Miscellaneous. */
   uint8_t             sample_time_ms;
   float               sample_time_sec;
   uint8_t             i2c_addr;
-
-  bool                calibration_mode;
 
 } mag_t;
 
@@ -68,7 +77,8 @@ static int32_t platform_read(void *handle, uint8_t reg, uint8_t *bufp, uint16_t 
 static int32_t platform_write(void *handle, uint8_t reg, const uint8_t *bufp, uint16_t len);
 static void    pass_through_enable(void);
 static void    pass_through_disable(void);
-static void    poll_data(void);
+static void    accel_gyro_data_read(void);
+static void    magnetometer_data_read(void);
 static void    config_read(__IO mag_config_t *config);
 static void    config_write(mag_config_t *config);
 
@@ -137,26 +147,26 @@ void mag_update(mag_state_t* state)
       lis2mdl_data_rate_set(&hmag.ctx, LIS2MDL_ODR_50Hz);
 
       /* Enable temperature compensation. */
-      lis2mdl_offset_temp_comp_set(&hmag.ctx, 1);
+      lis2mdl_offset_temp_comp_set(&hmag.ctx, PROPERTY_ENABLE);
 
       /* Enable Block Data Update. */
-      lis2mdl_block_data_update_set(&hmag.ctx, 1);
+      lis2mdl_block_data_update_set(&hmag.ctx, PROPERTY_ENABLE);
 
       /* Select low-pass bandwidth. */
       lis2mdl_low_pass_bandwidth_set(&hmag.ctx, LIS2MDL_ODR_DIV_2);
 
       /* Enable DRDY pin. */
-      lis2mdl_drdy_on_pin_set(&hmag.ctx, 1);
+      lis2mdl_drdy_on_pin_set(&hmag.ctx, PROPERTY_ENABLE);
 
       /* Disable sensor hub pass-through feature. */
       pass_through_disable();
 
-      /* Enable interrupts. */
+      /* Enable interrupt. */
       {
         lsm6ds3tr_c_int1_route_t int1_route = { 0 };
 
-        int1_route.int1_drdy_xl = 1;
-        int1_route.int1_drdy_g  = 1;
+        int1_route.int1_drdy_xl = PROPERTY_ENABLE;
+        int1_route.int1_drdy_g  = PROPERTY_ENABLE;
 
         lsm6ds3tr_c_pin_int1_route_set(&hmag.ctx, int1_route);
       }
@@ -194,9 +204,9 @@ void mag_update(mag_state_t* state)
       hmag.knobs.MTime                             = hmag.knobs.MTime;
       hmag.knobs.FrTime                            = hmag.knobs.FrTime;
       hmag.knobs.LMode                             = 0U;
-      hmag.knobs.gbias_mag_th_sc                   = 0.00387913641f;
-      hmag.knobs.gbias_acc_th_sc                   = 17.0277233f;
-      hmag.knobs.gbias_gyro_th_sc                  = 0.00388081465f;
+      hmag.knobs.gbias_mag_th_sc                   = 0.00327649713f;
+      hmag.knobs.gbias_acc_th_sc                   = 16.8438816f;
+      hmag.knobs.gbias_gyro_th_sc                  = 0.00291541335f;
       hmag.knobs.modx                              = 1U;
       hmag.knobs.acc_orientation[0]                = 'e';
       hmag.knobs.acc_orientation[1]                = 'n';
@@ -212,11 +222,39 @@ void mag_update(mag_state_t* state)
 
       MotionFX_setKnobs(hmag.mfx, &hmag.knobs);
 
+      HAL_Delay(50);
+
+      accel_gyro_data_read();
+      magnetometer_data_read();
+
       /* Done. */
       *state = MAG_RUN;
 
       break;
     case MAG_RUN:
+      if (1 == hmag.knobs.start_automatic_gbias_calculation)
+      {
+        if (HAL_GetTick() > 30000)
+        {
+          MotionFX_getKnobs(hmag.mfx, &hmag.knobs);
+          asm("NOP");
+        }
+      }
+
+      if (true == hmag.start_calib_press_timer)
+      {
+        hmag.calib_press_timer = HAL_GetTick() - hmag.calib_press_timer_init;
+      }
+
+      if (hmag.calib_press_timer >= CALIB_MODE_PRESS_DURATION_MS)
+      {
+        if (false == hmag.calibration_mode)
+        {
+          MotionFX_MagCal_init(40, 1);
+          hmag.calibration_mode = true;
+        }
+      }
+
       if (false == hmag.calibration_mode)
       {
         hmag.sample_time_ms  = 10; /* 100 Hz. */
@@ -228,7 +266,28 @@ void mag_update(mag_state_t* state)
         hmag.sample_time_sec = 0.04f;
       }
 
-      poll_data();
+      if (true == hmag.calibration_mode)
+      {
+        hmag.cal_data_in.mag[0]      = hmag.data_in.mag[0];
+        hmag.cal_data_in.mag[1]      = hmag.data_in.mag[1];
+        hmag.cal_data_in.mag[2]      = hmag.data_in.mag[2];
+        hmag.cal_data_in.time_stamp += hmag.sample_time_ms;
+
+        MotionFX_MagCal_run(&hmag.cal_data_in);
+        MotionFX_MagCal_getParams(&hmag.cal_data_out);
+
+        if (MFX_MAGCALGOOD == hmag.cal_data_out.cal_quality)
+        {
+          mag_config_t config;
+
+          hmag.calibration_mode = false;
+          config.hi_bias[0]     = hmag.cal_data_out.hi_bias[0];
+          config.hi_bias[1]     = hmag.cal_data_out.hi_bias[1];
+          config.hi_bias[2]     = hmag.cal_data_out.hi_bias[2];
+
+          config_write(&config);
+        }
+      }
 
       MotionFX_propagate(hmag.mfx, &hmag.data_out, &hmag.data_in, &hmag.sample_time_sec);
       MotionFX_update(hmag.mfx, &hmag.data_out, &hmag.data_in, &hmag.sample_time_sec, NULL);
@@ -240,18 +299,31 @@ void mag_update(mag_state_t* state)
       }
       else
       {
-        /* Todo: Calculate axis. */
+        /* This does not work yet. */
+
+        int16_t yaw_delta      = (360 - hmag.view_direction + (int16_t)hmag.data_out.heading + 180) % 360 - 180;
+        int16_t yaw_normalised = (255 * (180 + yaw_delta) / 359);
+
+        if (yaw_normalised < 0)
+        {
+          yaw_normalised = 0;
+        }
+        else if (yaw_normalised >= 255)
+        {
+          yaw_normalised = 255;
+        }
+
+        x_axis = (uint8_t)yaw_normalised;
       }
 
       {
-        char output[40] = { 0 };
-        snprintf(output, 40, "Orientation: %.2f,%.2f,%.2f\r\n",
+        char output[30] = { 0 };
+        snprintf(output, 30, "%.2f,%.2f,%.2f\n\r",
             hmag.data_out.heading,
             hmag.data_out.rotation[1],
             hmag.data_out.rotation[2]);
-        HAL_UART_Transmit_DMA(&huart2, (const uint8_t*)output, strnlen((const char*)output, 40));
+        HAL_UART_Transmit_DMA(&huart2, (const uint8_t*)output, strnlen((const char*)output, 30));
       }
-
       break;
     default:
       break;
@@ -287,72 +359,36 @@ static void pass_through_disable(void)
   lsm6ds3tr_c_sh_pass_through_set(&hmag.ctx, 0);
 }
 
-static void poll_data(void)
+static void accel_gyro_data_read(void)
 {
-  lis2mdl_status_reg_t     lis2mdl_status;
-  lsm6ds3tr_c_status_reg_t lsm6ds3tr_status;
+  lsm6ds3tr_c_acceleration_raw_get(&hmag.ctx, hmag.a);
 
-  lsm6ds3tr_c_status_reg_get(&hmag.ctx, &lsm6ds3tr_status);
-  if (lsm6ds3tr_status.xlda)
-  {
-    lsm6ds3tr_c_acceleration_raw_get(&hmag.ctx, hmag.a);
+  /* Acceleration in g */
+  hmag.data_in.acc[0] = hmag.a[0];
+  hmag.data_in.acc[1] = hmag.a[1];
+  hmag.data_in.acc[2] = hmag.a[2];
 
-    /* Acceleration in g */
-    hmag.data_in.acc[0] = hmag.a[0];
-    hmag.data_in.acc[1] = hmag.a[1];
-    hmag.data_in.acc[2] = hmag.a[2];
-  }
+  lsm6ds3tr_c_angular_rate_raw_get(&hmag.ctx, hmag.g);
 
-  if (lsm6ds3tr_status.gda)
-  {
-    lsm6ds3tr_c_angular_rate_raw_get(&hmag.ctx, hmag.g);
+  /* Angular rate in dps */
+  hmag.data_in.gyro[0] = hmag.g[0];
+  hmag.data_in.gyro[1] = hmag.g[1];
+  hmag.data_in.gyro[2] = hmag.g[2];
+}
 
-    /* Angular rate in dps */
-    hmag.data_in.gyro[0] = hmag.g[0];
-    hmag.data_in.gyro[1] = hmag.g[1];
-    hmag.data_in.gyro[2] = hmag.g[2];
-  }
-
+static void magnetometer_data_read(void)
+{
   pass_through_enable();
-  lis2mdl_status_get(&hmag.ctx, &lis2mdl_status);
-  if (lis2mdl_status.xda)
-  {
-    lis2mdl_magnetic_raw_get(&hmag.ctx, hmag.m);
+  lis2mdl_magnetic_raw_get(&hmag.ctx, hmag.m);
 
-    /* Convert magnetic field data from LSB to mgauss to uT/50 (microtesla/50). */
-    hmag.data_in.mag[0] = lis2mdl_from_lsb_to_mgauss(hmag.m[0]) * FROM_MGAUSS_TO_UT50;
-    hmag.data_in.mag[1] = lis2mdl_from_lsb_to_mgauss(hmag.m[1]) * FROM_MGAUSS_TO_UT50;
-    hmag.data_in.mag[2] = lis2mdl_from_lsb_to_mgauss(hmag.m[2]) * FROM_MGAUSS_TO_UT50;
+  /* Convert magnetic field data from LSB to mgauss to uT/50 (microtesla/50). */
+  hmag.data_in.mag[0] = lis2mdl_from_lsb_to_mgauss(hmag.m[0]) * FROM_MGAUSS_TO_UT50;
+  hmag.data_in.mag[1] = lis2mdl_from_lsb_to_mgauss(hmag.m[1]) * FROM_MGAUSS_TO_UT50;
+  hmag.data_in.mag[2] = lis2mdl_from_lsb_to_mgauss(hmag.m[2]) * FROM_MGAUSS_TO_UT50;
 
-    hmag.data_in.mag[0] -= hmag.cal_data_out.hi_bias[0];
-    hmag.data_in.mag[1] -= hmag.cal_data_out.hi_bias[1];
-    hmag.data_in.mag[2] -= hmag.cal_data_out.hi_bias[2];
-  }
-
-  if (true == hmag.calibration_mode)
-  {
-    hmag.cal_data_in.mag[0]      = hmag.data_in.mag[0];
-    hmag.cal_data_in.mag[1]      = hmag.data_in.mag[1];
-    hmag.cal_data_in.mag[2]      = hmag.data_in.mag[2];
-    hmag.cal_data_in.time_stamp += hmag.sample_time_ms;
-
-    MotionFX_MagCal_run(&hmag.cal_data_in);
-    MotionFX_MagCal_getParams(&hmag.cal_data_out);
-    if (MFX_MAGCALGOOD == hmag.cal_data_out.cal_quality)
-    {
-      mag_config_t config;
-
-      hmag.calibration_mode = false;
-      config.hi_bias[0]     = hmag.cal_data_out.hi_bias[0];
-      config.hi_bias[1]     = hmag.cal_data_out.hi_bias[1];
-      config.hi_bias[2]     = hmag.cal_data_out.hi_bias[2];
-
-      config_write(&config);
-
-      HAL_FLASH_Lock();
-    }
-  }
-
+  hmag.data_in.mag[0] -= hmag.cal_data_out.hi_bias[0];
+  hmag.data_in.mag[1] -= hmag.cal_data_out.hi_bias[1];
+  hmag.data_in.mag[2] -= hmag.cal_data_out.hi_bias[2];
   pass_through_disable();
 }
 
@@ -410,12 +446,28 @@ static void config_write(mag_config_t *config)
 
 void HAL_GPIO_EXTI_Callback(uint16_t GPIO_Pin)
 {
-  if (CALIBRATE_Pin == GPIO_Pin)
+  switch (GPIO_Pin)
   {
-    if (false == hmag.calibration_mode)
-    {
-      MotionFX_MagCal_init(40, 1);
-      hmag.calibration_mode = true;
-    }
+    case CALIBRATE_Pin:
+      if (HAL_GPIO_ReadPin(CALIBRATE_GPIO_Port, CALIBRATE_Pin))
+      {
+        hmag.start_calib_press_timer = false;
+        hmag.calib_press_timer       = 0;
+      }
+      else
+      {
+        hmag.view_direction          = (int16_t)hmag.data_out.heading;
+        hmag.start_calib_press_timer = true;
+        hmag.calib_press_timer_init  = HAL_GetTick();
+      }
+      break;
+    case DRDY_Pin:
+      magnetometer_data_read();
+      break;
+    case INT1_Pin:
+      accel_gyro_data_read();
+      break;
+    default:
+      break;
   }
 }
