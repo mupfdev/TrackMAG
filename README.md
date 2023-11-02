@@ -1,6 +1,7 @@
 # TrackMAG
 
-[![Firmware](https://github.com/mupfdev/TrackMAG/actions/workflows/firmware.yaml/badge.svg)](https://github.com/mupfdev/TrackMAG/actions/workflows/firmware.yaml)
+[![firmware](https://github.com/mupfdev/TrackMAG/actions/workflows/firmware.yaml/badge.svg)](https://github.com/mupfdev/TrackMAG/actions/workflows/firmware.yaml)
+[![bootloader](https://github.com/mupfdev/TrackMAG/actions/workflows/bootloader.yaml/badge.svg)](https://github.com/mupfdev/TrackMAG/actions/workflows/bootloader.yaml)
 
 TrackMAG is an open source development board equipped with a
 magnetometer, an accelerometer and a gyroscope and it is primarily
