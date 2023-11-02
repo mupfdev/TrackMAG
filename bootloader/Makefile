@@ -51,4 +51,3 @@ flash_config.h:
 
 clean:
 	-rm -f *.elf *.o *.bin *.map flash_config.h
-
