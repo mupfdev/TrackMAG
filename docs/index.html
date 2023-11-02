@@ -61,12 +61,22 @@
       <ol>
         <li><a href="#about">About</a></li>
         <li><a href="#project-status">Project Status</a></li>
-        <li><a href="#cad-pcb">TrackMAG v1 PCB</a></li>
-        <li><a href="#cad-case">TrackMAG v1 Case</a></li>
-        <li><a href="#prototype">Prototype</a></li>
-        <li><a href="#firmware-update">Firmware Update</a></li>
-        <li><a href="#bootloader">Bootloader</a></li>
-        <li><a href="#data-visualisation">Data Visualisation</a></li>
+        <li>
+          <a href="#hardware">Hardware</a>
+          <ol>
+            <li><a href="#cad-pcb">PCB v1</a></li>
+            <li><a href="#cad-case">Case v1</a></li>
+            <li><a href="#prototype">Prototype</a></li>
+          </ol>
+        </li>
+        <li>
+          <a href="#software">Software</a>
+          <ol>
+            <li><a href="#firmware-update">Firmware Update</a></li>
+            <li><a href="#bootloader">Bootloader</a></li>
+            <li><a href="#data-visualisation">Data Visualisation</a></li>
+          </ol>
+        </li>
         <li><a href="#wanna-help">You want to help?</a></li>
         <li><a href="#licence">Licence</a></li>
       </ol>
@@ -108,7 +118,9 @@
       on <a href="https://github.com/mupfdev/TrackMAG">GitHub</a>.
     </p>
 
-    <h3 id="cad-pcb">TrackMAG v1 PCB</h3>
+    <h3 id="hardware">Hardware</h3>
+
+    <h4 id="cad-pcb">PCB v1</h4>
 
     <p>
       The core of the board consists of
@@ -154,7 +166,7 @@
       </Scene>
     </X3D>
 
-    <h3 id="cad-case">TrackMAG v1 case</h3>
+    <h4 id="cad-case">Case v1</h4>
 
     <p>
       The housing is kept simple and functional and can be customised as
@@ -187,7 +199,7 @@
       </Scene>
     </X3D>
 
-    <h3 id="prototype">Prototype</h3>
+    <h4 id="prototype">Prototype</h4>
 
     <p>
       A few pictures of the initial prototype:
@@ -206,7 +218,9 @@
       on <a href="https://github.com/mupfdev/TrackMAG/tree/main/cad">GitHub</a>.
     </p>
 
-    <h3 id="firmware-update">Firmware Update</h3>
+    <h3 id="software">Software</h3>
+
+    <h4 id="firmware-update">Firmware Update</h4>
 
     <p>
       <span id="status"></span>
@@ -274,7 +288,7 @@
       </form>
     </fieldset>
 
-    <h3 id="bootloader">Bootloader</h3>
+    <h4 id="bootloader">Bootloader</h4>
 
     <a href="https://github.com/mupfdev/TrackMAG/actions/workflows/bootloader.yaml">
       <img src="https://github.com/mupfdev/TrackMAG/actions/workflows/bootloader.yaml/badge.svg" alt="Bootloader build status">
@@ -286,7 +300,7 @@
       download: <a href="bootloader-dfu-fw.bin">bootloader-dfu-fw.bin</a>
     </p>
 
-    <h3 id="data-visualisation">Data Visualisation</h3>
+    <h4 id="data-visualisation">Data Visualisation</h4>
 
     <p>
       The calculated Tait-Bryan rotations<label for="sn-1"
