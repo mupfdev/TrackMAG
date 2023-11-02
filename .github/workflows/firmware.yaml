@@ -35,8 +35,7 @@ jobs:
           add: 'docs/TrackMAG-latest.bin'
           author_name: Michael Fitzmayer
           author_email: mail@michael-fitzmayer.de
-          message: 'Upload firmware binary to project website'
       - name: Upload artifacts
         uses: actions/upload-artifact@v3
         with:
-          path: binaries/TrackMAG-latest.bin
+          path: docs/TrackMAG-latest.bin

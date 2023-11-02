@@ -5,7 +5,7 @@ GIT_VERSION := $(shell git describe --abbrev=8 --dirty --always --tags)
 
 # Config bits
 BOOTLOADER_SIZE = 4
-FLASH_SIZE = 128
+FLASH_SIZE = 124
 FLASH_BASE_ADDR = 0x08000000
 FLASH_BOOTLDR_PAYLOAD_SIZE_KB = $(shell echo $$(($(FLASH_SIZE) - $(BOOTLOADER_SIZE))))
 
