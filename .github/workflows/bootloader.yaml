@@ -1,0 +1,24 @@
+name: bootloader
+on:
+  push:
+    paths:
+      - bootloader/**
+permissions:
+  contents: write
+jobs:
+  build-bootloader:
+    name: Build bootloader
+    runs-on: ubuntu-20.04
+    steps:
+      - name: Checkout the repository
+        uses: actions/checkout@v3
+      - name: Determine short GIT hash
+        id: short-sha
+        run: |
+          echo "sha=$(echo ${{github.sha}} | sed 's/^\(.\{10\}\).*$/\1/')" >> $GITHUB_OUTPUT
+      - name: arm-none-eabi-gcc
+        uses: ryanwinter/arm-none-eabi-gcc@master
+        with:
+          release: '10.3-2021.10' # The arm-none-eabi-gcc release to use.
+      - run: |
+          make -f bootloader/Makefile
