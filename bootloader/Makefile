@@ -3,7 +3,7 @@ CC = $(CROSS_COMPILE)gcc
 OBJCOPY = $(CROSS_COMPILE)objcopy
 GIT_VERSION := $(shell git describe --abbrev=8 --dirty --always --tags)
 
-# Config bits 
+# Config bits
 BOOTLOADER_SIZE = 4
 FLASH_SIZE = 128
 FLASH_BASE_ADDR = 0x08000000

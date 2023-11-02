@@ -16,9 +16,10 @@ jobs:
         id: short-sha
         run: |
           echo "sha=$(echo ${{github.sha}} | sed 's/^\(.\{10\}\).*$/\1/')" >> $GITHUB_OUTPUT
-      - name: arm-none-eabi-gcc
+      - name: Build bootloader
         uses: ryanwinter/arm-none-eabi-gcc@master
         with:
           release: '10.3-2021.10' # The arm-none-eabi-gcc release to use.
       - run: |
-          make -f bootloader/Makefile
+          cd bootloader
+          make
