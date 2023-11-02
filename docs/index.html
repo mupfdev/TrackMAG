@@ -65,6 +65,7 @@
         <li><a href="#cad-case">TrackMAG v1 Case</a></li>
         <li><a href="#prototype">Prototype</a></li>
         <li><a href="#firmware-update">Firmware Update</a></li>
+        <li><a href="#data-visualisation">Data Visualisation</a></li>
         <li><a href="#wanna-help">You want to help?</a></li>
         <li><a href="#licence">Licence</a></li>
       </ol>
@@ -271,6 +272,27 @@
         </fieldset>
       </form>
     </fieldset>
+
+    <h3 id="data-visualisation">Data Visualisation</h3>
+
+    <p>
+      The calculated Tait-Bryan rotations<label for="sn-1"
+      class="sidenote-toggle
+      sidenote-number"></label><input type="checkbox" id="sn-1"
+      class="sidenote-toggle"><span class="sidenote">Three elemental
+      rotations about each one of the principal axis of a body.  For a
+      craft moving in the positive x direction, with the right side
+      corresponding to the positive y direction, and the vertical
+      underside corresponding to the positive z direction, these three
+      angles are individually called roll, pitch and yaw.</span>are
+      output in the reference firmware via UART in 115200 baud.  This
+      data can be visualized with the serial oscilloscope from x-io
+      Technologies Limited, for example.
+    </p>
+
+    <div class="gallery free-standing">
+      <img class="image-zoom gallery-1x1" src="serial-oscilloscope.png" alt="Serial oscilloscope screenshot">
+    </div>
 
     <p>
       <a href="https://github.com/devanlai/webdfu">webdfu</a> by Devan
