@@ -24,6 +24,7 @@
 #include "usart.h"
 #include "usb_device.h"
 #include "gpio.h"
+#include "usbd_custom_hid_if.h"
 
 /* Private includes ----------------------------------------------------------*/
 /* USER CODE BEGIN Includes */

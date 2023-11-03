@@ -76,6 +76,7 @@ typedef struct
 } mag_t;
 
 static mag_t hmag;
+uint8_t      debug;
 
 static int32_t platform_read(void *handle, uint8_t reg, uint8_t *bufp, uint16_t len);
 static int32_t platform_write(void *handle, uint8_t reg, const uint8_t *bufp, uint16_t len);
@@ -85,6 +86,7 @@ static void    accel_gyro_data_read(void);
 static void    magnetometer_data_read(void);
 static void    config_read(__IO mag_config_t *config);
 static void    config_write(void);
+static uint8_t transform_delta_angle(float angle, float limit);
 
 void mag_update(mag_state_t* state)
 {
@@ -292,13 +294,17 @@ void mag_update(mag_state_t* state)
       else
       {
         int16_t yaw_delta = (360 - hmag.view_direction + (int)hmag.data_out.heading + 180) % 360 - 180;
+
+        debug = transform_delta_angle(yaw_delta, 220.f);
         //float yaw_normalised = (yaw_delta - (-180.f)) / (360.f) * (2.f) + (-1.f); /* -1.f to 1.f */
-        x_axis = (255 * (180 + yaw_delta) / 359);
+        //debug = transform_normalised_angle(yaw_normalised, 1.5f);
+
+
       }
 
       {
         char output[30] = { 0 };
-        snprintf(output, 30, "%.2f,%.2f,%.2f\n\r",
+        snprintf(output, 30, "%.2f,%.2f,%.2f\r\n",
             hmag.data_out.heading,
             hmag.data_out.rotation[1],
             hmag.data_out.rotation[2]);
@@ -421,6 +427,23 @@ static void config_write(void)
   }
 
   HAL_FLASH_Lock();
+}
+
+static uint8_t transform_delta_angle(float angle, float limit)
+{
+  float interim = angle / 180.f * limit;
+  float result  = ((interim / limit) + 1) * 128.f;
+
+  if (result < 0.f)
+  {
+    result = 0.f;
+  }
+  else if (result >= 255.f)
+  {
+    result = 255.f;
+  }
+
+  return (uint8_t)result;
 }
 
 void HAL_GPIO_EXTI_Callback(uint16_t GPIO_Pin)
