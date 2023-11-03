@@ -349,7 +349,7 @@ static inline int reset_due_to_pin() {
 }
 #endif
 
-static void clock_setup_in_hse_8mhz_out_72mhz() {
+static void clock_setup_in_hse_16mhz_out_72mhz() {
 	// No need to use HSI or HSE while setting up the PLL, just use the RC osc.
 
 	/* Enable external high-speed oscillator 16MHz. */
@@ -482,7 +482,7 @@ int main(void) {
 		}
 	}
 
-	clock_setup_in_hse_8mhz_out_72mhz();
+	clock_setup_in_hse_16mhz_out_72mhz();
 
 	/* Disable USB peripheral as it overrides GPIO settings */
 	*USB_CNTR_REG = USB_CNTR_PWDN;
