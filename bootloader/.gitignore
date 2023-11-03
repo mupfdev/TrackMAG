@@ -2,4 +2,8 @@
 *.bin
 *.elf
 *.o
+.cproject
+.project
+.settings
 flash_config.h
+
