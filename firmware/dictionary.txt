@@ -9,9 +9,6 @@ aux
 analog
 yaw
 quaternion
-madgwick
-mahony
-radians
 atan
 sqrt
 dps
