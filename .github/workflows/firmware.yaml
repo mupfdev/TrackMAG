@@ -20,7 +20,7 @@ jobs:
         uses: xanderhendriks/action-build-stm32cubeide@v10.0
         with:
           project-path: 'firmware'
-          project-target: 'TrackMAG'
+          project-target: 'TrackMAG/Release'
       - name: Setup Python
         uses: actions/setup-python@v4
         with:
