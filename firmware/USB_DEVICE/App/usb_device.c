@@ -64,22 +64,21 @@ USBD_HandleTypeDef hUsbDeviceFS;
 void MX_USB_DEVICE_Init(void)
 {
   /* USER CODE BEGIN USB_DEVICE_Init_PreTreatment */
-  /* Hack so that the USB cable does not have to be re-plugged. */
+
+  /* Re-enumerate USB device so that the USB cable does not have to be re-plugged. */
+#if DEBUG
   GPIO_InitTypeDef GPIO_InitStruct = {0};
 
-  __HAL_RCC_GPIOA_CLK_ENABLE();
+  GPIO_InitStruct.Pin   = GPIO_PIN_12;
+  GPIO_InitStruct.Mode  = GPIO_MODE_OUTPUT_PP;
+  GPIO_InitStruct.Pull  = GPIO_PULLDOWN;
+  GPIO_InitStruct.Speed = GPIO_SPEED_HIGH;
+
+  HAL_GPIO_Init(GPIOA, &GPIO_InitStruct);
   HAL_GPIO_WritePin(GPIOA, GPIO_PIN_12, GPIO_PIN_RESET);
 
-  /*Configure GPIO pin : PA12, USB_DP */
-  GPIO_InitStruct.Pin = GPIO_PIN_12;
-  GPIO_InitStruct.Mode = GPIO_MODE_OUTPUT_PP;
-  GPIO_InitStruct.Pull = GPIO_NOPULL;
-  GPIO_InitStruct.Speed = GPIO_SPEED_FREQ_LOW;
-  HAL_GPIO_Init(GPIOA, &GPIO_InitStruct);
-
   HAL_Delay(5);
-  /* Hardware reset rendered harmless! */
-
+#endif
   /* USER CODE END USB_DEVICE_Init_PreTreatment */
 
   /* Init Device Library, add supported class and start the library. */
@@ -87,6 +86,7 @@ void MX_USB_DEVICE_Init(void)
   {
     Error_Handler();
   }
+
   if (USBD_RegisterClass(&hUsbDeviceFS, &USBD_CUSTOM_HID) != USBD_OK)
   {
     Error_Handler();

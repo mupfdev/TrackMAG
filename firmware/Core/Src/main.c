@@ -24,11 +24,10 @@
 #include "usart.h"
 #include "usb_device.h"
 #include "gpio.h"
-#include "usbd_custom_hid_if.h"
 
 /* Private includes ----------------------------------------------------------*/
 /* USER CODE BEGIN Includes */
-#include "mag_handler.h"
+#include "app_trackmag.h"
 /* USER CODE END Includes */
 
 /* Private typedef -----------------------------------------------------------*/
@@ -70,7 +69,7 @@ void SystemClock_Config(void);
 int main(void)
 {
   /* USER CODE BEGIN 1 */
-   mag_state_t state = MAG_INIT;
+  app_state_t state = APP_INIT;
   /* USER CODE END 1 */
 
   /* MCU Configuration--------------------------------------------------------*/
@@ -103,7 +102,7 @@ int main(void)
   /* USER CODE BEGIN WHILE */
   while (1)
   {
-    mag_update(&state);
+    app_update(&state);
     /* USER CODE END WHILE */
 
     /* USER CODE BEGIN 3 */
