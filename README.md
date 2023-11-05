@@ -15,3 +15,10 @@ website](https://mupfdev.github.io/TrackMAG/).
 This project is, unless stated otherwise, licensed under the [CERN Open
 Hardware Licence Version 2 -
 Permissive](https://ohwr.org/cern_ohl_p_v2.txt).
+
+MotionFX by STMicroelectronics is licenced under the terms of the SLA0077 Software License Agreement.  See the file
+[SLA0077.pdf](pdf/SLA0077.pdf) for details.
+
+[webdfu](https://github.com/devanlai/webdfu)</a> by Devan Lai is
+licenced under the the [ISC
+License](https://github.com/devanlai/webdfu/blob/gh-pages/LICENSE).
