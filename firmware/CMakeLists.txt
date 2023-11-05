@@ -83,15 +83,16 @@ set(CORE_FLAGS
   --specs=nano.specs
   --specs=nosys.specs
   -Os -s
-  -Wl,-flto
   -Wl,--gc-sections
   -Wl,-Map="TrackMAG.map"
+  -Wl,-flto
+  -ffast-math
+  -ffunction-sections -fdata-sections
   -mcpu=cortex-m3
   -mfloat-abi=soft
   -mthumb
   -static
   -u _printf_float
-  -ffast-math
   )
 
 target_compile_options(${PROJECT_NAME} PRIVATE ${CORE_FLAGS})
@@ -107,5 +108,5 @@ add_custom_command(TARGET ${PROJECT_NAME}
 add_custom_command(TARGET ${PROJECT_NAME}
   POST_BUILD
   COMMAND arm-none-eabi-objcopy -O binary ${PROJECT_NAME} ${PROJECT_NAME}.bin
-  COMMAND python ${CMAKE_SOURCE_DIR}/bootloader/checksum.py ${PROJECT_NAME}.bin
+  COMMAND ${CMAKE_SOURCE_DIR}/../bootloader/checksum.py ${PROJECT_NAME}.bin
   )
