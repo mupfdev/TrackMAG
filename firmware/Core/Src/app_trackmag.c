@@ -5,6 +5,8 @@
  *      Author: Michael Fitzmayer
  */
 
+#define _POSIX_C_SOURCE 200809L
+
 #include <inttypes.h>
 #include <math.h>
 #include <stdbool.h>
