@@ -86,8 +86,9 @@ set(CORE_FLAGS
   -Wl,--gc-sections
   -Wl,-Map="TrackMAG.map"
   -Wl,-flto
+  -fdata-sections
   -ffast-math
-  -ffunction-sections -fdata-sections
+  -ffunction-sections
   -flto
   -mcpu=cortex-m3
   -mfloat-abi=soft
