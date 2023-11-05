@@ -88,6 +88,7 @@ set(CORE_FLAGS
   -Wl,-flto
   -ffast-math
   -ffunction-sections -fdata-sections
+  -flto
   -mcpu=cortex-m3
   -mfloat-abi=soft
   -mthumb
