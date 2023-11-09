@@ -23,6 +23,8 @@
 #include "usart.h"
 #include "usbd_custom_hid_if.h"
 
+#define FACTOR_X_DEFAULT              2.f
+#define RANGE_X_DEFAULT              30.f
 #define AXIS_CENTER                  128u
 #define CALIB_MODE_PRESS_DURATION_MS 3000u
 #define CONFIG_FLASH_ADDR            0x0801fc00
@@ -68,6 +70,8 @@ typedef struct
   uint32_t            calib_press_timer_init;
 
   /* Axis calculation. */
+  uint8_t             x_axis;
+  uint8_t             y_axis;
   uint32_t            view_direction;
 
   /* Miscellaneous. */
@@ -78,7 +82,17 @@ typedef struct
 } app_t;
 
 static app_t happ;
-uint8_t      debug;
+
+#if defined DEBUG
+
+static float   dbg_factor = FACTOR_X_DEFAULT;
+static float   dbg_range  = RANGE_X_DEFAULT;
+static int16_t dbg_yaw_delta;
+static float   dbg_yaw_normalised;
+static float   dbg_intermediate;
+static float   dbg_axis;
+
+#endif /* defined DEBUG */
 
 static int32_t platform_read(void *handle, uint8_t reg, uint8_t *bufp, uint16_t len);
 static int32_t platform_write(void *handle, uint8_t reg, const uint8_t *bufp, uint16_t len);
@@ -88,20 +102,21 @@ static void    accel_gyro_data_read(void);
 static void    magnetometer_data_read(void);
 static void    config_read(__IO app_config_t *config);
 static void    config_write(void);
-static uint8_t transform_delta_angle(float angle, float limit);
+static void    transform_x_axis();
 
 void app_update(app_state_t* state)
 {
   app_config_t config      = { 0 };
   hid_report_t report      = { 0 };
   uint8_t      data_buffer = 0;
-  uint8_t      x_axis      = AXIS_CENTER;
-  uint8_t      y_axis      = AXIS_CENTER;
 
   switch (*state)
   {
     case APP_INIT:
       memset(&happ, 0, sizeof(app_t));
+
+      happ.x_axis = AXIS_CENTER;
+      happ.y_axis = AXIS_CENTER;
 
       config_read(&config);
 
@@ -282,6 +297,10 @@ void app_update(app_state_t* state)
           happ.calibration_mode = false;
           MotionFX_MagCal_init(40, 0);
           config_write();
+
+          happ.m_offset[0] = happ.cal_data_out.hi_bias[0];
+          happ.m_offset[1] = happ.cal_data_out.hi_bias[1];
+          happ.m_offset[2] = happ.cal_data_out.hi_bias[2];
         }
       }
 
@@ -290,24 +309,21 @@ void app_update(app_state_t* state)
 
       if (true == happ.calibration_mode)
       {
-        x_axis = AXIS_CENTER;
-        y_axis = AXIS_CENTER;
+        happ.x_axis = AXIS_CENTER;
+        happ.y_axis = AXIS_CENTER;
       }
       else
       {
-        int16_t yaw_delta = (360 - happ.view_direction + (int)happ.data_out.heading + 180) % 360 - 180;
-
-        debug = transform_delta_angle(yaw_delta, 220.f);
-        //float yaw_normalised = (yaw_delta - (-180.f)) / (360.f) * (2.f) + (-1.f); /* -1.f to 1.f */
-        //debug = transform_normalised_angle(yaw_normalised, 1.5f);
+        transform_x_axis();
       }
 
       {
         char output[30] = { 0 };
+
         snprintf(output, 30, "%.2f,%.2f,%.2f\r\n",
-            happ.data_out.heading,
-            happ.data_out.rotation[1],
-            happ.data_out.rotation[2]);
+          happ.data_out.heading,
+          happ.data_out.rotation[1],
+          happ.data_out.rotation[2]);
         HAL_UART_Transmit_DMA(&huart2, (const uint8_t*)output, strnlen((const char*)output, 30));
       }
       break;
@@ -315,8 +331,8 @@ void app_update(app_state_t* state)
       break;
   }
 
-  report.axis[0] = x_axis;
-  report.axis[1] = y_axis;
+  report.axis[0] = happ.x_axis;
+  report.axis[1] = happ.y_axis;
   usb_send_report(&report);
   HAL_Delay(happ.sample_time_ms);
 }
@@ -429,21 +445,49 @@ static void config_write(void)
   HAL_FLASH_Lock();
 }
 
-static uint8_t transform_delta_angle(float angle, float limit)
+static float sign(float value)
 {
-  float interim = angle / 180.f * limit;
-  float result  = ((interim / limit) + 1) * 128.f;
+  return (value < 0.f) ? -1 : 1;
+}
 
-  if (result < 0.f)
+static void transform_x_axis()
+{
+#if defined DEBUG
+
+  float   factor         = dbg_factor;
+  float   range          = dbg_range;
+
+#else
+
+  float   factor         = 2.f;
+  float   range          = 30.f;
+
+#endif /* defined DEBUG */
+
+  int16_t yaw_delta      = MIN((int16_t)MAX(((360 - (int16_t)happ.data_out.heading + (int16_t)happ.view_direction + 180) % 360) - 180, -range), range);
+  float   yaw_normalised = 2.f * ((float)yaw_delta + range) / (2.f * range) - 1.f;
+  float   intermediate   = sign(yaw_normalised) * pow(fabs(yaw_normalised), factor);
+  float   axis           = 255.f * (0.5f + (-0.5f * intermediate));
+
+  if (axis >= 255.f)
   {
-    result = 0.f;
+    axis = 255.f;
   }
-  else if (result >= 255.f)
+  else if (axis <= 0.f)
   {
-    result = 255.f;
+    axis = 0.f;
   }
 
-  return (uint8_t)result;
+#if defined DEBUG
+
+  dbg_yaw_delta      = yaw_delta;
+  dbg_yaw_normalised = yaw_normalised;
+  dbg_intermediate   = intermediate;
+  dbg_axis           = axis;
+
+#endif /* defined DEBUG */
+
+  happ.x_axis = (uint8_t)axis;
 }
 
 void HAL_GPIO_EXTI_Callback(uint16_t GPIO_Pin)

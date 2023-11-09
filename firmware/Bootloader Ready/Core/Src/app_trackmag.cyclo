@@ -1,0 +1,6 @@
+../Core/Src/app_trackmag.c:329:16:platform_read	1
+../Core/Src/app_trackmag.c:335:16:platform_write	1
+../Core/Src/app_trackmag.c:353:13:accel_gyro_data_read	1
+../Core/Src/app_trackmag.c:370:13:magnetometer_data_read	1
+../Core/Src/app_trackmag.c:96:6:app_update	25
+../Core/Src/app_trackmag.c:461:6:HAL_GPIO_EXTI_Callback	5
